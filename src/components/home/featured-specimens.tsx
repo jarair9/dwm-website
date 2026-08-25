@@ -31,7 +31,7 @@ export async function FeaturedSpecimens() {
             Museum Quality
           </p>
           <h2 className="font-serif text-4xl font-bold tracking-tight text-foreground">
-            Featured Lots
+            Featured Products
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
             Each stone is hand-selected for its exceptional quality, rarity, and
@@ -79,7 +79,7 @@ export async function FeaturedSpecimens() {
         ) : (
           <div className="mt-16 rounded-2xl border border-border/50 bg-white py-10 text-center">
             <p className="text-lg text-muted-foreground">
-              Featured lots coming soon
+              Featured products coming soon
             </p>
           </div>
         )}
