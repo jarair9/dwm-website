@@ -75,17 +75,17 @@ export function ImageGallery({ images, name, status }: ImageGalleryProps) {
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
       e.preventDefault();
-      setLastTouch({ dist: getTouchDist(e.touches), mid: getTouchMid(e.touches) });
+      setLastTouch({ dist: getTouchDist(e.nativeEvent.touches), mid: getTouchMid(e.nativeEvent.touches) });
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 2 && lastTouch) {
       e.preventDefault();
-      const newDist = getTouchDist(e.touches);
+      const newDist = getTouchDist(e.nativeEvent.touches);
       const scaleDelta = newDist / lastTouch.dist;
       setPinchScale((s) => Math.min(Math.max(s * scaleDelta, 1), 4));
-      setLastTouch({ dist: newDist, mid: getTouchMid(e.touches) });
+      setLastTouch({ dist: newDist, mid: getTouchMid(e.nativeEvent.touches) });
     }
   };
 
