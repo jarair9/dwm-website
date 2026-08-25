@@ -77,7 +77,7 @@ export default function FavoritesPage() {
     <>
       <Navbar />
       <main className="flex-1 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-16">
+        <div className="mx-auto max-w-7xl px-6 py-16 pt-24 lg:pt-20">
           <h1 className="font-serif text-3xl font-bold text-foreground">
             My Favorites
           </h1>

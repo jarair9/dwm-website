@@ -74,7 +74,7 @@ export default function ProfilePage() {
       <>
         <Navbar />
         <main className="flex-1 bg-background">
-          <div className="mx-auto max-w-2xl px-6 py-16">
+          <div className="mx-auto max-w-2xl px-6 py-16 pt-24 lg:pt-20">
             <div className="animate-pulse space-y-4">
               <div className="h-8 w-48 rounded bg-secondary" />
               <div className="h-4 w-32 rounded bg-secondary" />
@@ -95,7 +95,7 @@ export default function ProfilePage() {
     <>
       <Navbar />
       <main className="flex-1 bg-background">
-        <div className="mx-auto max-w-2xl px-6 py-16">
+        <div className="mx-auto max-w-2xl px-6 py-16 pt-24 lg:pt-20">
           <h1 className="font-serif text-3xl font-bold text-foreground">
             My Account
           </h1>

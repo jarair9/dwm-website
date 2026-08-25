@@ -13,7 +13,7 @@ export default function ContactPage() {
     <>
       <Navbar />
       <main className="flex-1">
-        <section className="bg-background py-24">
+        <section className="bg-background py-24 pt-32 lg:pt-28">
           <div className="mx-auto max-w-4xl px-6">
             <div className="text-center">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
