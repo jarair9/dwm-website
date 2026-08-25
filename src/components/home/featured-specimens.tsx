@@ -47,28 +47,30 @@ export async function FeaturedSpecimens() {
                 href={`/products/${specimen.slug}`}
                 className="group block"
               >
-                <div className="overflow-hidden rounded-2xl border border-border/50 bg-white transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
+                <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-white transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
                   <div className="relative aspect-[4/3] overflow-hidden bg-secondary/30">
                     <Image
                       src={specimen.image}
                       alt={specimen.title}
                       fill
                       className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
                     />
                   </div>
-                  <div className="p-4">
+                  <div className="flex flex-1 flex-col p-3 sm:p-4">
                     {specimen.category && (
                       <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                         {specimen.category}
                       </p>
                     )}
-                    <h3 className="mt-1 text-sm font-bold text-foreground leading-snug line-clamp-2">
+                    <h3 className="mt-1 text-xs sm:text-sm font-bold text-foreground leading-snug line-clamp-2">
                       {specimen.title}
                     </h3>
-                    <p className="mt-2 text-base font-bold text-foreground">
-                      ${specimen.price.toLocaleString()}
-                    </p>
+                    <div className="mt-auto pt-2">
+                      <p className="text-sm sm:text-base font-bold text-foreground">
+                        ${specimen.price.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </Link>

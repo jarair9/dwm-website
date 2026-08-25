@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
@@ -28,6 +28,16 @@ export function TestimonialForm({ testimonial, onDone }: TestimonialFormProps) {
   const [content, setContent] = useState(testimonial?.content || "");
   const [rating, setRating] = useState(testimonial?.rating || 5);
   const [photoUrl, setPhotoUrl] = useState(testimonial?.author_photo_url || "");
+
+  useEffect(() => {
+    if (testimonial) {
+      setAuthor(testimonial.author);
+      setLocation(testimonial.location || "");
+      setContent(testimonial.content);
+      setRating(testimonial.rating);
+      setPhotoUrl(testimonial.author_photo_url || "");
+    }
+  }, [testimonial?.id]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

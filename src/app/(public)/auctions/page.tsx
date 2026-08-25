@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Badge } from "@/components/ui/badge";
 import { BidCard } from "@/components/auction/bid-card";
+import { AuctionFilters } from "@/components/auction/auction-filters";
 
 export const metadata: Metadata = {
   title: "Auctions | Distinct Mineral World",
@@ -76,16 +76,19 @@ export default async function AuctionsPage({
       <Navbar />
       <main className="flex-1">
         <section className="bg-background py-16 pt-24 lg:pt-20">
-          <div className="mx-auto max-w-7xl px-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div>
-              <h1 className="font-serif text-4xl font-bold tracking-tight text-foreground">
+              <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
                 {title}
               </h1>
-              <p className="mt-3 text-muted-foreground">{description}</p>
+              <p className="mt-3 text-sm sm:text-base text-muted-foreground">{description}</p>
             </div>
 
+            {/* Filter Tabs */}
+            <AuctionFilters current={statusFilter} />
+
             {auctions.length > 0 ? (
-              <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-6 grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-3">
                 {auctions.map((auction) => (
                   <BidCard key={auction.id} auction={auction} />
                 ))}
