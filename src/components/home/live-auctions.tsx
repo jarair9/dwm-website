@@ -37,7 +37,7 @@ export async function LiveAuctions() {
     })) || [];
 
   return (
-    <section className="bg-white py-24">
+    <section className="bg-white py-12 sm:py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex items-center justify-between">
           <div>

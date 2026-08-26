@@ -48,33 +48,34 @@ export function Navbar() {
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-white/80 backdrop-blur-xl shadow-sm border-b border-border/30"
-            : "bg-white/20 backdrop-blur-sm"
+            ? "bg-white/90 backdrop-blur-xl shadow-sm border-b border-border/30"
+            : "bg-white/90 backdrop-blur-sm"
         }`}
       >
         <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          {/* Mobile hamburger */}
+          {/* Left: Mobile hamburger + MENU */}
           <button
             onClick={() => setMobileOpen(true)}
-            className="flex h-8 w-8 items-center justify-center lg:hidden"
+            className="flex items-center gap-2 lg:hidden"
           >
             <svg className="h-5 w-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
+            <span className="text-xs font-semibold uppercase tracking-wider text-black">Menu</span>
           </button>
 
-          {/* Logo */}
+          {/* Center: Logo + Name */}
           <Link href="/" className="flex items-center gap-2 sm:gap-2.5">
             <Image
               src="/logo.png"
               alt="Distinct Mineral World"
-              width={40}
-              height={40}
-              className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 object-contain"
+              width={48}
+              height={48}
+              className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 object-contain"
               priority
             />
-            <span className="font-serif text-xs sm:text-lg lg:text-xl font-bold tracking-tight text-black leading-tight">
-              Distinct Mineral<br className="sm:hidden" /> World
+            <span className="font-serif text-sm sm:text-lg lg:text-xl font-extrabold tracking-tight text-black leading-tight">
+              Distinct Mineral<br />World
             </span>
           </Link>
 
@@ -87,7 +88,7 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* Right icons */}
+          {/* Right: Favorites + Account */}
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href={user ? "/favorites" : "/login"}
@@ -114,7 +115,7 @@ export function Navbar() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
           <div className="absolute top-0 left-0 h-full w-72 bg-white shadow-xl">
-            <div className="flex h-16 items-center justify-between border-b border-border px-6">
+            <div className="flex h-14 items-center justify-between border-b border-border px-6">
               <span className="font-serif text-lg font-bold text-foreground">Menu</span>
               <button onClick={() => setMobileOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
