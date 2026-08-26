@@ -44,7 +44,9 @@ export function BidPanel({ lot }: BidPanelProps) {
   useEffect(() => {
     const checkUser = async () => {
       const supabase = createClient();
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
 
       if (authUser) {
         setUser(authUser);
@@ -78,17 +80,22 @@ export function BidPanel({ lot }: BidPanelProps) {
     const { error } = await supabase
       .from("profiles")
       .update({
-        full_name: formName,
-        email: formEmail,
-        phone: formPhone || null,
-        whatsapp: formWhatsapp || null,
+        full_name: formName.trim(),
+        email: formEmail.trim().toLowerCase(),
+        phone: formPhone.trim() || null,
+        whatsapp: formWhatsapp.trim() || null,
       })
       .eq("id", profile.id);
 
     if (error) {
       toast.error("Failed to save profile");
     } else {
-      setProfile({ ...profile, full_name: formName, email: formEmail, phone: formPhone });
+      setProfile({
+        ...profile,
+        full_name: formName.trim(),
+        email: formEmail.trim().toLowerCase(),
+        phone: formPhone.trim(),
+      });
       toast.success("Profile saved! You can now place bids.");
     }
     setSavingProfile(false);
@@ -96,7 +103,6 @@ export function BidPanel({ lot }: BidPanelProps) {
 
   const handlePlaceBid = async () => {
     setIsPlacingBid(true);
-    const supabase = createClient();
 
     if (!user) {
       toast.error("Please sign in to place a bid");
@@ -110,26 +116,25 @@ export function BidPanel({ lot }: BidPanelProps) {
       return;
     }
 
-    const { data, error } = await supabase.rpc("place_bid", {
-      p_lot_id: lot.id,
-      p_amount: bidAmount,
-      p_user_id: profile!.id,
-      p_bidder_name: profile!.full_name,
-      p_user_key: user.id,
-    });
+    try {
+      const response = await fetch("/api/place-bid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          auction_id: lot.id,
+          amount: bidAmount,
+        }),
+      });
 
-    if (error) {
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`Bid of $${bidAmount.toLocaleString()} placed!`);
+      } else {
+        toast.error(result.message || "Bid failed");
+      }
+    } catch {
       toast.error("Failed to place bid. Please try again.");
-      setIsPlacingBid(false);
-      return;
-    }
-
-    const result = data as { ok: boolean; code?: string; message?: string };
-
-    if (result.ok) {
-      toast.success(`Bid of $${bidAmount.toLocaleString()} placed!`);
-    } else {
-      toast.error(result.message || "Bid failed");
     }
 
     setIsPlacingBid(false);
@@ -152,9 +157,7 @@ export function BidPanel({ lot }: BidPanelProps) {
   });
 
   const handleTimerEnd = async () => {
-    try {
-      await fetch("/api/auctions/close-expired", { method: "POST" });
-    } catch {}
+    // Timer ended — the lot page will auto-close on next load
     window.location.reload();
   };
 
@@ -176,10 +179,15 @@ export function BidPanel({ lot }: BidPanelProps) {
       {/* Countdown */}
       <div className="rounded-2xl border border-border/50 p-6">
         <p className="mb-4 text-sm font-medium text-foreground">Time left</p>
-        <CountdownTimer endTime={lot.endTime} variant="detailed" onEnd={handleTimerEnd} />
+        <CountdownTimer
+          endTime={lot.endTime}
+          variant="detailed"
+          onEnd={handleTimerEnd}
+        />
         <div className="mt-4 border-t border-border/50 pt-4">
           <p className="text-sm text-muted-foreground">
-            Auction ends: <span className="font-medium text-foreground">{endFormatted}</span>
+            Auction ends:{" "}
+            <span className="font-medium text-foreground">{endFormatted}</span>
           </p>
         </div>
       </div>
@@ -193,7 +201,6 @@ export function BidPanel({ lot }: BidPanelProps) {
               <div className="h-10 rounded bg-secondary" />
             </div>
           ) : !user ? (
-            /* Not signed in */
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
                 Sign in to place a bid
@@ -205,26 +212,32 @@ export function BidPanel({ lot }: BidPanelProps) {
               </Link>
               <p className="mt-3 text-xs text-muted-foreground">
                 Don&apos;t have an account?{" "}
-                <Link href="/register" className="underline underline-offset-4 hover:text-foreground">
+                <Link
+                  href="/register"
+                  className="underline underline-offset-4 hover:text-foreground"
+                >
                   Register
                 </Link>
               </p>
             </div>
           ) : !isProfileComplete ? (
-            /* Signed in but profile incomplete */
             <div>
-              <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
                 <p className="text-sm font-medium text-amber-800">
                   Complete your profile to bid
                 </p>
                 <p className="mt-1 text-xs text-amber-700">
-                  Please provide your real name, email, and phone number. These details are required to coordinate auction wins, payments, and delivery. Incorrect details may result in cancellation.
+                  Please provide your real name, email, and phone number. These
+                  details are required to coordinate auction wins, payments, and
+                  delivery. Incorrect details may result in cancellation.
                 </p>
               </div>
 
               <form onSubmit={handleSaveProfile} className="space-y-3">
                 <div>
-                  <Label htmlFor="bid-name" className="text-sm">Full Name *</Label>
+                  <Label htmlFor="bid-name" className="text-sm">
+                    Full Name *
+                  </Label>
                   <Input
                     id="bid-name"
                     type="text"
@@ -233,10 +246,13 @@ export function BidPanel({ lot }: BidPanelProps) {
                     placeholder="Your full name"
                     className="mt-1"
                     required
+                    maxLength={100}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bid-email" className="text-sm">Email *</Label>
+                  <Label htmlFor="bid-email" className="text-sm">
+                    Email *
+                  </Label>
                   <Input
                     id="bid-email"
                     type="email"
@@ -245,10 +261,13 @@ export function BidPanel({ lot }: BidPanelProps) {
                     placeholder="you@example.com"
                     className="mt-1"
                     required
+                    maxLength={255}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bid-phone" className="text-sm">Phone *</Label>
+                  <Label htmlFor="bid-phone" className="text-sm">
+                    Phone *
+                  </Label>
                   <Input
                     id="bid-phone"
                     type="tel"
@@ -257,10 +276,14 @@ export function BidPanel({ lot }: BidPanelProps) {
                     placeholder="+92 300 1234567"
                     className="mt-1"
                     required
+                    maxLength={20}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bid-whatsapp" className="text-sm">WhatsApp <span className="text-muted-foreground">(optional)</span></Label>
+                  <Label htmlFor="bid-whatsapp" className="text-sm">
+                    WhatsApp{" "}
+                    <span className="text-muted-foreground">(optional)</span>
+                  </Label>
                   <Input
                     id="bid-whatsapp"
                     type="tel"
@@ -268,24 +291,31 @@ export function BidPanel({ lot }: BidPanelProps) {
                     onChange={(e) => setFormWhatsapp(e.target.value)}
                     placeholder="+92 300 1234567"
                     className="mt-1"
+                    maxLength={20}
                   />
                 </div>
-                <Button type="submit" disabled={savingProfile} className="w-full rounded-full">
+                <Button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="w-full rounded-full"
+                >
                   {savingProfile ? "Saving..." : "Save & Continue to Bidding"}
                 </Button>
               </form>
             </div>
           ) : (
-            /* Profile complete — show bid form */
             <>
-              <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 p-3">
+              <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
                 <p className="text-xs text-blue-700">
-                  Bidding as <span className="font-medium">{profile.full_name}</span> ({profile.email})
+                  Bidding as{" "}
+                  <span className="font-medium">{profile.full_name}</span> (
+                  {profile.email})
                 </p>
               </div>
 
               <Label htmlFor="bid" className="text-sm font-medium">
-                Place your bid (min increment ${lot.bidIncrement.toLocaleString()})
+                Place your bid (min increment $
+                {lot.bidIncrement.toLocaleString()})
               </Label>
               <div className="relative mt-2">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -328,8 +358,9 @@ export function BidPanel({ lot }: BidPanelProps) {
                 {isPlacingBid ? "Placing Bid..." : "Place Bid"}
               </Button>
 
-              <p className="mt-3 text-xs text-center text-muted-foreground">
-                By placing a bid you agree to our terms. Ensure your contact details are correct — we will use them to coordinate if you win.
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                By placing a bid you agree to our terms. Ensure your contact
+                details are correct — we will use them to coordinate if you win.
               </p>
             </>
           )}

@@ -8,6 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
+function sanitizeInput(value: string): string {
+  return value
+    .replace(/[<>]/g, "")
+    .trim()
+    .slice(0, 5000);
+}
+
 export function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,10 +29,10 @@ export function ContactForm() {
     const supabase = createClient();
 
     const { error } = await supabase.from("contact_messages").insert({
-      name,
-      email,
-      subject,
-      message,
+      name: sanitizeInput(name),
+      email: sanitizeInput(email),
+      subject: sanitizeInput(subject),
+      message: sanitizeInput(message),
     });
 
     if (error) {
@@ -51,6 +58,7 @@ export function ContactForm() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Your name"
           required
+          maxLength={100}
         />
       </div>
       <div className="space-y-2">
@@ -62,6 +70,7 @@ export function ContactForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           required
+          maxLength={255}
         />
       </div>
       <div className="space-y-2">
@@ -72,6 +81,7 @@ export function ContactForm() {
           onChange={(e) => setSubject(e.target.value)}
           placeholder="How can we help?"
           required
+          maxLength={200}
         />
       </div>
       <div className="space-y-2">
@@ -83,6 +93,7 @@ export function ContactForm() {
           placeholder="Tell us more..."
           rows={5}
           required
+          maxLength={5000}
         />
       </div>
       <Button type="submit" className="w-full rounded-full" disabled={loading}>

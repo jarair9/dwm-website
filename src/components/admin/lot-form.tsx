@@ -15,6 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { deleteStorageFiles } from "@/lib/storage";
+import {
+  validateImageFile,
+  validateVideoFile,
+} from "@/lib/utils";
 
 interface Category {
   id: string;
@@ -84,7 +89,10 @@ export function LotForm({ lot, categories }: LotFormProps) {
     }
   };
 
-  const uploadFile = async (file: File, folder: string): Promise<string | null> => {
+  const uploadFile = async (
+    file: File,
+    folder: string
+  ): Promise<string | null> => {
     const ext = file.name.split(".").pop();
     const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
@@ -109,6 +117,11 @@ export function LotForm({ lot, categories }: LotFormProps) {
     const newUrls: string[] = [];
 
     for (const file of Array.from(files)) {
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        toast.error(validationError);
+        continue;
+      }
       const url = await uploadFile(file, "images");
       if (url) newUrls.push(url);
     }
@@ -126,6 +139,13 @@ export function LotForm({ lot, categories }: LotFormProps) {
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const validationError = validateVideoFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      if (videoInputRef.current) videoInputRef.current.value = "";
+      return;
+    }
 
     setUploadingVideo(true);
     const url = await uploadFile(file, "videos");
@@ -147,9 +167,9 @@ export function LotForm({ lot, categories }: LotFormProps) {
       .filter((url) => url.length > 0);
 
     const lotData = {
-      name,
-      slug,
-      description: description || null,
+      name: name.trim(),
+      slug: slug.trim(),
+      description: description.trim() || null,
       starting_bid: startingBid,
       bid_increment: bidIncrement,
       start_time: new Date(startTime).toISOString(),
@@ -196,6 +216,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="Kashmir Blue Sapphire"
               required
+              maxLength={200}
             />
           </div>
 
@@ -207,6 +228,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
               onChange={(e) => setSlug(e.target.value)}
               placeholder="kashmir-blue-sapphire"
               required
+              maxLength={200}
             />
           </div>
 
@@ -218,12 +240,16 @@ export function LotForm({ lot, categories }: LotFormProps) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the specimen..."
               rows={4}
+              maxLength={5000}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select value={categoryId} onValueChange={(v) => setCategoryId(v || "")}>
+            <Select
+              value={categoryId}
+              onValueChange={(v) => setCategoryId(v || "")}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -244,7 +270,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
               <input
                 ref={imageInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/avif"
                 multiple
                 onChange={handleImageUpload}
                 className="hidden"
@@ -255,12 +281,25 @@ export function LotForm({ lot, categories }: LotFormProps) {
                 disabled={uploadingImage}
                 className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-50"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                  />
                 </svg>
                 {uploadingImage ? "Uploading..." : "Upload Images"}
               </button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              JPEG, PNG, WebP, AVIF — max 10MB each
+            </p>
             <Textarea
               value={images}
               onChange={(e) => setImages(e.target.value)}
@@ -269,10 +308,17 @@ export function LotForm({ lot, categories }: LotFormProps) {
               className="mt-2"
             />
             {images && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {images.split("\n").filter(Boolean).map((url, i) => (
-                  <div key={i} className="relative h-16 w-16 overflow-hidden rounded-lg border border-border">
-                    <img src={url} alt="" className="h-full w-full object-cover" />
+                  <div
+                    key={i}
+                    className="relative h-16 w-16 overflow-hidden rounded-lg border border-border"
+                  >
+                    <img
+                      src={url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
                     <button
                       type="button"
                       onClick={() => {
@@ -280,7 +326,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
                         urls.splice(i, 1);
                         setImages(urls.join("\n"));
                       }}
-                      className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white hover:bg-red-600"
+                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white hover:bg-red-600"
                     >
                       x
                     </button>
@@ -301,6 +347,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
                 value={startingBid}
                 onChange={(e) => setStartingBid(Number(e.target.value))}
                 min={1}
+                max={10000000}
                 required
               />
             </div>
@@ -312,6 +359,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
                 value={bidIncrement}
                 onChange={(e) => setBidIncrement(Number(e.target.value))}
                 min={5}
+                max={1000000}
                 required
               />
             </div>
@@ -364,7 +412,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
               <input
                 ref={videoInputRef}
                 type="file"
-                accept="video/*"
+                accept="video/mp4,video/webm,video/quicktime"
                 onChange={handleVideoUpload}
                 className="hidden"
               />
@@ -374,17 +422,31 @@ export function LotForm({ lot, categories }: LotFormProps) {
                 disabled={uploadingVideo}
                 className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-50"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                  />
                 </svg>
                 {uploadingVideo ? "Uploading..." : "Upload Video"}
               </button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              MP4, WebM — max 100MB
+            </p>
             <Input
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               placeholder="Or paste video URL (YouTube, Vimeo, etc.)"
               className="mt-2"
+              maxLength={500}
             />
             {videoUrl && (
               <div className="mt-2 flex items-center gap-2">
@@ -418,16 +480,27 @@ export function LotForm({ lot, categories }: LotFormProps) {
           <button
             type="button"
             onClick={async () => {
-              if (!lot || !confirm("Delete this lot? This cannot be undone.")) return;
+              if (!lot || !confirm("Delete this lot? This cannot be undone."))
+                return;
               setLoading(true);
               try {
-                const { error } = await supabase.from("lots").delete().eq("id", lot.id);
+                // Clean up storage
+                await deleteStorageFiles([...(lot.images ?? []), lot.video_url]);
+                // Clean up lot_media
+                await supabase.from("lot_media").delete().eq("lot_id", lot.id);
+
+                const { error } = await supabase
+                  .from("lots")
+                  .delete()
+                  .eq("id", lot.id);
                 if (error) throw error;
                 toast.success("Lot deleted");
                 router.push("/admin/lots");
                 router.refresh();
               } catch (err: unknown) {
-                toast.error(err instanceof Error ? err.message : "Failed to delete");
+                toast.error(
+                  err instanceof Error ? err.message : "Failed to delete"
+                );
               } finally {
                 setLoading(false);
               }

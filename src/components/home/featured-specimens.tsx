@@ -20,27 +20,29 @@ export async function FeaturedSpecimens() {
       title: lot.name,
       image: lot.images?.[0] || "/hero-banner.png",
       price: lot.starting_bid,
-      category: (lot.categories as { name: string; slug: string } | null)?.name || "",
+      category: (lot.categories as { name: string; slug: string; type: string } | null)?.name || "",
+      categoryType: (lot.categories as { name: string; slug: string; type: string } | null)?.type || "",
+      status: lot.status,
     })) || [];
 
   return (
-    <section className="bg-secondary/30 py-24">
-      <div className="mx-auto max-w-7xl px-6">
+    <section className="bg-secondary/30 py-12 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="text-center">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Museum Quality
+            Hand-Selected for Excellence
           </p>
-          <h2 className="font-serif text-4xl font-bold tracking-tight text-foreground">
-            Featured Products
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            Featured Lots
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Each stone is hand-selected for its exceptional quality, rarity, and
-            beauty. Verified by leading gemological laboratories.
+          <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base text-muted-foreground">
+            Each specimen is hand-selected for its exceptional quality, rarity, and
+            provenance. Certified by GIA, G&uuml;belin, and SSEF.
           </p>
         </div>
 
         {specimens.length > 0 ? (
-          <div className="mt-16 grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 sm:mt-16 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
             {specimens.map((specimen) => (
               <Link
                 key={specimen.id}
@@ -56,6 +58,12 @@ export async function FeaturedSpecimens() {
                       className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
                     />
+                    {/* Category badge */}
+                    <div className="absolute top-2 left-2">
+                      <span className="inline-flex rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground backdrop-blur-sm">
+                        {specimen.categoryType || "Lot"}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex flex-1 flex-col p-3 sm:p-4">
                     {specimen.category && (
@@ -66,7 +74,8 @@ export async function FeaturedSpecimens() {
                     <h3 className="mt-1 text-xs sm:text-sm font-bold text-foreground leading-snug line-clamp-2">
                       {specimen.title}
                     </h3>
-                    <div className="mt-auto pt-2">
+                    <div className="mt-auto pt-2 border-t border-border/50">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Starting from</p>
                       <p className="text-sm sm:text-base font-bold text-foreground">
                         ${specimen.price.toLocaleString()}
                       </p>
@@ -77,31 +86,21 @@ export async function FeaturedSpecimens() {
             ))}
           </div>
         ) : (
-          <div className="mt-16 rounded-2xl border border-border/50 bg-white py-10 text-center">
+          <div className="mt-8 sm:mt-16 rounded-2xl border border-border/50 bg-white py-10 text-center">
             <p className="text-lg text-muted-foreground">
-              Featured products coming soon
+              Featured lots coming soon
             </p>
           </div>
         )}
 
-        <div className="mt-12 text-center">
+        <div className="mt-8 sm:mt-12 text-center">
           <Link
             href="/minerals"
-            className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-3.5 text-sm font-medium text-foreground transition-all hover:bg-secondary"
+            className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-3.5 text-sm font-medium text-foreground transition-all hover:bg-white"
           >
             View Full Collection
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
           </Link>
         </div>

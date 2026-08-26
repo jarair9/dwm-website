@@ -31,21 +31,24 @@ export default async function AuctionsPage({
     query.eq("status", "live");
   }
 
-  const { data: lots } = await query.order("end_time", { ascending: true });
-
-  // Auto-close any expired live auctions
-  if (statusFilter === "live" && lots) {
-    const expiredLots = lots.filter(
-      (lot) => lot.status === "live" && new Date(lot.end_time) <= new Date()
-    );
-    for (const lot of expiredLots) {
-      await supabase.rpc("close_auction", { p_lot_id: lot.id });
-      lot.status = "closed";
-    }
+  // Auto-close expired auctions in one batch call (not per-lot)
+  if (statusFilter === "live") {
+    await supabase.rpc("close_all_expired_auctions");
   }
 
+  // Re-fetch with updated statuses
+  const reQuery = supabase.from("lots").select("*");
+  if (statusFilter === "closed") {
+    reQuery.in("status", ["closed", "sold", "not_sold"]);
+  } else if (statusFilter === "upcoming") {
+    reQuery.eq("status", "upcoming");
+  } else {
+    reQuery.eq("status", "live");
+  }
+  const { data: lots } = await reQuery.order("end_time", { ascending: true });
+
   const auctions =
-    lots?.map((lot) => ({
+    (lots || []).map((lot) => ({
       id: lot.id,
       slug: lot.slug,
       title: lot.name,

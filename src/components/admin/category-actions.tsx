@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { deleteStorageFiles } from "@/lib/storage";
+import { validateImageFile } from "@/lib/utils";
 
 interface Category {
   id: string;
@@ -38,7 +40,10 @@ interface CategoryActionsProps {
   parentCategories?: { id: string; name: string; type: string }[];
 }
 
-export function CategoryActions({ category, parentCategories = [] }: CategoryActionsProps) {
+export function CategoryActions({
+  category,
+  parentCategories = [],
+}: CategoryActionsProps) {
   const router = useRouter();
   const supabase = createClient();
   const [open, setOpen] = useState(false);
@@ -49,6 +54,7 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
   const [imageUrl, setImageUrl] = useState(category?.image_url || "");
   const [parentId, setParentId] = useState(category?.parent_id || "");
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,9 +70,18 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const err = validateImageFile(file);
+    if (err) {
+      toast.error(err);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `categories/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const oldUrl = imageUrl;
 
     const { error } = await supabase.storage
       .from("lot-images")
@@ -77,6 +92,8 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
     } else {
       const { data } = supabase.storage.from("lot-images").getPublicUrl(path);
       setImageUrl(data.publicUrl);
+      // Delete old image only after new upload succeeds
+      if (oldUrl) await deleteStorageFiles([oldUrl]);
       toast.success("Image uploaded");
     }
 
@@ -130,23 +147,68 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
 
   const handleDelete = async () => {
     if (!category) return;
-    if (!confirm("Delete this category? Lots and subcategories will be unassigned.")) return;
+    if (
+      !confirm(
+        "Delete this category and ALL subcategories under it? This cannot be undone."
+      )
+    )
+      return;
 
-    const { error } = await supabase
-      .from("categories")
-      .delete()
-      .eq("id", category.id);
+    setDeleting(true);
+    try {
+      const { data: subs } = await supabase
+        .from("categories")
+        .select("id, image_url")
+        .eq("parent_id", category.id);
 
-    if (error) {
-      toast.error("Failed to delete category");
-    } else {
-      toast.success("Category deleted");
-      router.refresh();
+      // Delete all storage images (parent + subs)
+      await deleteStorageFiles([
+        category.image_url,
+        ...(subs?.map((s: { image_url: string | null }) => s.image_url).filter(Boolean) ?? []),
+      ]);
+
+      // Delete subcategories first (FK blocks parent delete otherwise)
+      if (subs && subs.length > 0) {
+        const { error: subErr } = await supabase
+          .from("categories")
+          .delete()
+          .in("id", subs.map((s: { id: string }) => s.id));
+        if (subErr) {
+          toast.error("Failed to delete subcategories");
+          return;
+        }
+      }
+
+      // Unassign lots from this category
+      await supabase
+        .from("lots")
+        .update({ category_id: null })
+        .eq("category_id", category.id);
+
+      // Delete parent category
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", category.id);
+
+      if (error) {
+        toast.error("Failed to delete category");
+      } else {
+        toast.success(
+          subs && subs.length > 0
+            ? `Category deleted (${subs.length} subcategories removed)`
+            : "Category deleted"
+        );
+        router.refresh();
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
+  // Only show parents of the same type, exclude self
   const filteredParents = parentCategories.filter(
-    (p) => p.id !== category?.id
+    (p) => p.id !== category?.id && p.type === type
   );
 
   return (
@@ -192,24 +254,33 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
           </div>
           <div className="space-y-2">
             <Label>Type</Label>
-            <Select value={type} onValueChange={(v) => v && setType(v)}>
+            <Select
+              value={type}
+              onValueChange={(v) => {
+                if (v) {
+                  setType(v);
+                  setParentId("");
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="gemstone">Gemstone</SelectItem>
                 <SelectItem value="mineral">Mineral</SelectItem>
-                <SelectItem value="fossil">Fossil</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Parent Category */}
+          {/* Parent Category — only same type */}
           {filteredParents.length > 0 && (
             <div className="space-y-2">
               <Label>Parent Category (optional)</Label>
-              <Select value={parentId} onValueChange={(v) => setParentId(v || "")}>
+              <Select
+                value={parentId}
+                onValueChange={(v) => setParentId(v || "")}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="None (top-level)" />
                 </SelectTrigger>
@@ -217,7 +288,7 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
                   <SelectItem value="">None (top-level)</SelectItem>
                   {filteredParents.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name} ({cat.type})
+                      {cat.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -245,8 +316,18 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
                 disabled={uploading}
                 className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-50"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                  />
                 </svg>
                 {uploading ? "Uploading..." : "Upload Image"}
               </button>
@@ -258,12 +339,16 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
               className="mt-2"
             />
             {imageUrl && (
-              <div className="mt-2 relative inline-block">
-                <img src={imageUrl} alt="" className="h-20 w-20 rounded-lg object-cover border border-border" />
+              <div className="relative mt-2 inline-block">
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="h-20 w-20 rounded-lg border border-border object-cover"
+                />
                 <button
                   type="button"
                   onClick={() => setImageUrl("")}
-                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white hover:bg-red-600"
+                  className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white hover:bg-red-600"
                 >
                   x
                 </button>
@@ -280,7 +365,7 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
             />
           </div>
           <div className="flex gap-4">
-            <Button type="submit" className="rounded-full" disabled={loading}>
+            <Button type="submit" className="rounded-full" disabled={loading || deleting}>
               {loading ? "Saving..." : isEditing ? "Update" : "Create"}
             </Button>
             {isEditing && (
@@ -288,8 +373,9 @@ export function CategoryActions({ category, parentCategories = [] }: CategoryAct
                 type="button"
                 variant="destructive"
                 onClick={handleDelete}
+                disabled={deleting}
               >
-                Delete
+                {deleting ? "Deleting..." : "Delete"}
               </Button>
             )}
           </div>

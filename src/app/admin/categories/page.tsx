@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CategoryActions } from "@/components/admin/category-actions";
 
@@ -11,7 +10,9 @@ export default async function AdminCategoriesPage() {
     .select("*")
     .order("name");
 
-  const parentCategories = categories?.filter((c) => !c.parent_id) || [];
+  const allCategories = categories || [];
+  const parentCategories = allCategories.filter((c) => !c.parent_id);
+  const subCategories = allCategories.filter((c) => c.parent_id);
 
   const { data: lotsCount } = await supabase.from("lots").select("category_id");
 
@@ -32,55 +33,105 @@ export default async function AdminCategoriesPage() {
         <CategoryActions parentCategories={parentCategories} />
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {categories && categories.length > 0 ? (
-          categories.map((category) => (
-            <Card key={category.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  {category.image_url ? (
+      <div className="mt-8 space-y-4">
+        {parentCategories.length > 0 ? (
+          parentCategories.map((parent) => {
+            const children = subCategories.filter(
+              (s) => s.parent_id === parent.id
+            );
+            const totalLots =
+              getCategoryCount(parent.id) +
+              children.reduce(
+                (sum, child) => sum + getCategoryCount(child.id),
+                0
+              );
+
+            return (
+              <div
+                key={parent.id}
+                className="rounded-xl border border-border/50 bg-white"
+              >
+                {/* Parent row */}
+                <div className="flex items-center gap-4 p-5">
+                  {parent.image_url ? (
                     <img
-                      src={category.image_url}
-                      alt={category.name}
-                      className="h-16 w-16 rounded-lg object-cover"
+                      src={parent.image_url}
+                      alt={parent.name}
+                      className="h-14 w-14 rounded-lg object-cover"
                     />
                   ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-secondary text-2xl">
-                      💎
+                    <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-secondary text-xl">
+                      {parent.type === "mineral" ? "🪨" : "💎"}
                     </div>
                   )}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-serif text-lg font-semibold">
-                          {category.name}
-                        </h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          /{category.slug}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="capitalize">
-                        {category.type}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-serif text-lg font-semibold truncate">
+                        {parent.name}
+                      </h3>
+                      <Badge variant="outline" className="capitalize shrink-0">
+                        {parent.type}
                       </Badge>
+                      {children.length > 0 && (
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {children.length} sub
+                        </span>
+                      )}
                     </div>
-                    {category.description && (
-                      <p className="mt-3 text-sm text-muted-foreground line-clamp-2">
-                        {category.description}
-                      </p>
-                    )}
-                    <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-4">
-                      <span className="text-sm text-muted-foreground">
-                        {getCategoryCount(category.id)} lots
-                      </span>
-                      <CategoryActions category={category} parentCategories={parentCategories} />
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {totalLots} lots
+                      {children.length > 0 &&
+                        ` \u00B7 ${children.length} subcategories`}
+                    </p>
                   </div>
+                  <CategoryActions
+                    category={parent}
+                    parentCategories={parentCategories}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          ))
+
+                {/* Children rows */}
+                {children.length > 0 && (
+                  <div className="border-t border-border/50">
+                    {children.map((child, i) => (
+                      <div
+                        key={child.id}
+                        className={`flex items-center gap-4 px-5 py-3 ml-12 ${
+                          i < children.length - 1 ? "border-b border-border/30" : ""
+                        }`}
+                      >
+                        {child.image_url ? (
+                          <img
+                            src={child.image_url}
+                            alt={child.name}
+                            className="h-10 w-10 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-sm">
+                            {parent.type === "mineral" ? "🪨" : "💎"}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {child.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {getCategoryCount(child.id)} lots
+                          </p>
+                        </div>
+                        <CategoryActions
+                          category={child}
+                          parentCategories={parentCategories}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })
         ) : (
-          <div className="col-span-full rounded-2xl border border-border/50 bg-secondary/30 py-16 text-center">
+          <div className="rounded-2xl border border-border/50 bg-secondary/30 py-16 text-center">
             <p className="text-muted-foreground">No categories yet</p>
           </div>
         )}

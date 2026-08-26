@@ -4,8 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { deleteStorageFiles } from "@/lib/storage";
 
-export function DeleteLotButton({ lotId }: { lotId: string }) {
+export function DeleteLotButton({
+  lotId,
+  images,
+  videoUrl,
+}: {
+  lotId: string;
+  images?: string[];
+  videoUrl?: string | null;
+}) {
   const router = useRouter();
   const supabase = createClient();
   const [deleting, setDeleting] = useState(false);
@@ -14,6 +23,12 @@ export function DeleteLotButton({ lotId }: { lotId: string }) {
     if (!confirm("Delete this lot? This cannot be undone.")) return;
     setDeleting(true);
     try {
+      // Clean up storage
+      await deleteStorageFiles([...(images ?? []), videoUrl]);
+
+      // Clean up lot_media
+      await supabase.from("lot_media").delete().eq("lot_id", lotId);
+
       const { error } = await supabase.from("lots").delete().eq("id", lotId);
       if (error) throw error;
       toast.success("Lot deleted");

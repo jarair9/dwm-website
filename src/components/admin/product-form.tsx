@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { deleteStorageFiles } from "@/lib/storage";
+import { validateImageFile, validateVideoFile } from "@/lib/utils";
 
 interface ProductFormProps {
   product?: {
@@ -64,6 +66,11 @@ export function ProductForm({ product, categories }: ProductFormProps) {
     const newUrls: string[] = [];
 
     for (const file of Array.from(files)) {
+      const err = validateImageFile(file);
+      if (err) {
+        toast.error(err);
+        continue;
+      }
       const url = await uploadFile(file, "images");
       if (url) newUrls.push(url);
     }
@@ -81,6 +88,13 @@ export function ProductForm({ product, categories }: ProductFormProps) {
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const err = validateVideoFile(file);
+    if (err) {
+      toast.error(err);
+      if (videoInputRef.current) videoInputRef.current.value = "";
+      return;
+    }
 
     setUploadingVideo(true);
     const url = await uploadFile(file, "videos");
@@ -139,6 +153,11 @@ export function ProductForm({ product, categories }: ProductFormProps) {
     if (!product || !confirm("Delete this product? This cannot be undone.")) return;
     setDeleting(true);
     try {
+      // Clean up storage
+      await deleteStorageFiles([...(product.images ?? []), product.video_url]);
+      // Clean up lot_media
+      await supabase.from("lot_media").delete().eq("lot_id", product.id);
+
       const { error } = await supabase.from("lots").delete().eq("id", product.id);
       if (error) throw error;
       toast.success("Product deleted");

@@ -23,21 +23,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { deleteStorageFiles } from "@/lib/storage";
+import { validateImageFile } from "@/lib/utils";
 
 interface Banner {
   id: string;
   title: string | null;
   description: string | null;
   image: string;
+  mobile_image?: string | null;
   cta_label: string | null;
   cta_url: string | null;
   page_type: string;
   sort_order: number;
-  dark_image?: string | null;
-  dark_title?: string | null;
-  dark_description?: string | null;
-  dark_cta_label?: string | null;
-  dark_cta_url?: string | null;
 }
 
 interface BannerActionsProps {
@@ -51,33 +49,44 @@ export function BannerActions({ banner }: BannerActionsProps) {
   const [title, setTitle] = useState(banner?.title || "");
   const [description, setDescription] = useState(banner?.description || "");
   const [image, setImage] = useState(banner?.image || "");
+  const [mobileImage, setMobileImage] = useState(banner?.mobile_image || "");
   const [ctaLabel, setCtaLabel] = useState(banner?.cta_label || "");
   const [ctaUrl, setCtaUrl] = useState(banner?.cta_url || "");
   const [pageType, setPageType] = useState(banner?.page_type || "home");
   const [sortOrder, setSortOrder] = useState(banner?.sort_order || 0);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [showDark, setShowDark] = useState(false);
-  const [darkImage, setDarkImage] = useState(banner?.dark_image || "");
-  const [darkTitle, setDarkTitle] = useState(banner?.dark_title || "");
-  const [darkDescription, setDarkDescription] = useState(banner?.dark_description || "");
-  const [darkCtaLabel, setDarkCtaLabel] = useState(banner?.dark_cta_label || "");
-  const [darkCtaUrl, setDarkCtaUrl] = useState(banner?.dark_cta_url || "");
-  const [darkUploading, setDarkUploading] = useState(false);
+  const [mobileUploading, setMobileUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const darkFileInputRef = useRef<HTMLInputElement>(null);
+  const mobileFileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = !!banner;
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isDark = false) => {
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target: "desktop" | "mobile" = "desktop"
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (isDark) setDarkUploading(true);
+    const err = validateImageFile(file);
+    if (err) {
+      toast.error(err);
+      if (target === "mobile" && mobileFileInputRef.current)
+        mobileFileInputRef.current.value = "";
+      if (target === "desktop" && fileInputRef.current)
+        fileInputRef.current.value = "";
+      return;
+    }
+
+    if (target === "mobile") setMobileUploading(true);
     else setUploading(true);
 
     const ext = file.name.split(".").pop();
     const path = `banners/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const oldUrl = target === "mobile" ? mobileImage : image;
 
     const { error } = await supabase.storage
       .from("lot-images")
@@ -87,19 +96,23 @@ export function BannerActions({ banner }: BannerActionsProps) {
       toast.error("Upload failed: " + error.message);
     } else {
       const { data } = supabase.storage.from("lot-images").getPublicUrl(path);
-      if (isDark) {
-        setDarkImage(data.publicUrl);
+      if (target === "mobile") {
+        setMobileImage(data.publicUrl);
       } else {
         setImage(data.publicUrl);
       }
+      // Delete old image only after new upload succeeds
+      if (oldUrl) await deleteStorageFiles([oldUrl]);
       toast.success("Image uploaded");
     }
 
-    if (isDark) setDarkUploading(false);
+    if (target === "mobile") setMobileUploading(false);
     else setUploading(false);
 
-    if (isDark && darkFileInputRef.current) darkFileInputRef.current.value = "";
-    if (!isDark && fileInputRef.current) fileInputRef.current.value = "";
+    if (target === "mobile" && mobileFileInputRef.current)
+      mobileFileInputRef.current.value = "";
+    if (target === "desktop" && fileInputRef.current)
+      fileInputRef.current.value = "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,15 +123,11 @@ export function BannerActions({ banner }: BannerActionsProps) {
       title: title || null,
       description: description || null,
       image,
+      mobile_image: mobileImage || null,
       cta_label: ctaLabel || null,
       cta_url: ctaUrl || null,
       page_type: pageType,
       sort_order: sortOrder,
-      dark_image: darkImage || null,
-      dark_title: darkTitle || null,
-      dark_description: darkDescription || null,
-      dark_cta_label: darkCtaLabel || null,
-      dark_cta_url: darkCtaUrl || null,
     };
 
     let error;
@@ -149,29 +158,31 @@ export function BannerActions({ banner }: BannerActionsProps) {
     setTitle("");
     setDescription("");
     setImage("");
+    setMobileImage("");
     setCtaLabel("");
     setCtaUrl("");
     setPageType("home");
     setSortOrder(0);
-    setDarkImage("");
-    setDarkTitle("");
-    setDarkDescription("");
-    setDarkCtaLabel("");
-    setDarkCtaUrl("");
-    setShowDark(false);
   };
 
   const handleDelete = async () => {
     if (!banner) return;
     if (!confirm("Delete this banner?")) return;
 
-    const { error } = await supabase.from("banners").delete().eq("id", banner.id);
+    setDeleting(true);
+    try {
+      await deleteStorageFiles([banner.image, banner.mobile_image]);
 
-    if (error) {
-      toast.error("Failed to delete banner");
-    } else {
-      toast.success("Banner deleted");
-      router.refresh();
+      const { error } = await supabase.from("banners").delete().eq("id", banner.id);
+
+      if (error) {
+        toast.error("Failed to delete banner");
+      } else {
+        toast.success("Banner deleted");
+        router.refresh();
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -181,17 +192,25 @@ export function BannerActions({ banner }: BannerActionsProps) {
     uploading: isUploading,
     fileInputRef: ref,
     onUpload,
+    label,
   }: {
     value: string;
     onChange: (v: string) => void;
     uploading: boolean;
     fileInputRef: React.RefObject<HTMLInputElement | null>;
     onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    label: string;
   }) => (
     <div className="flex gap-4">
       {value ? (
         <div className="relative h-32 w-48 overflow-hidden rounded-lg border border-border">
-          <Image src={value} alt="Banner preview" fill className="object-cover" sizes="192px" />
+          <Image
+            src={value}
+            alt="Banner preview"
+            fill
+            className="object-cover"
+            sizes="192px"
+          />
           <button
             type="button"
             onClick={() => onChange("")}
@@ -206,20 +225,41 @@ export function BannerActions({ banner }: BannerActionsProps) {
         </div>
       )}
       <div className="flex flex-col gap-2">
-        <input ref={ref} type="file" accept="image/*" onChange={onUpload} className="hidden" />
+        <input
+          ref={ref}
+          type="file"
+          accept="image/*"
+          onChange={onUpload}
+          className="hidden"
+        />
         <button
           type="button"
           onClick={() => ref?.current?.click()}
           disabled={isUploading}
           className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-50"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+            />
           </svg>
-          {isUploading ? "Uploading..." : "Upload Image"}
+          {isUploading ? "Uploading..." : label}
         </button>
         <p className="text-[10px] text-muted-foreground">Or paste URL below</p>
-        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://example.com/banner.jpg" className="text-xs" />
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="https://example.com/banner.jpg"
+          className="text-xs"
+        />
       </div>
     </div>
   );
@@ -242,12 +282,11 @@ export function BannerActions({ banner }: BannerActionsProps) {
           <DialogTitle>{isEditing ? "Edit Banner" : "New Banner"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Light Theme */}
+          {/* Desktop Image */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-full bg-white border border-gray-300" />
-              <h3 className="text-sm font-semibold text-foreground">Light Theme</h3>
-            </div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Desktop Banner
+            </h3>
             <div className="space-y-2">
               <Label>Banner Image *</Label>
               <ImageUpload
@@ -255,18 +294,82 @@ export function BannerActions({ banner }: BannerActionsProps) {
                 onChange={setImage}
                 uploading={uploading}
                 fileInputRef={fileInputRef}
-                onUpload={(e) => handleImageUpload(e, false)}
+                onUpload={(e) => handleImageUpload(e, "desktop")}
+                label="Upload Desktop Image"
               />
             </div>
+          </div>
+
+          {/* Mobile Image */}
+          <div className="space-y-4 border-t border-border pt-4">
+            <h3 className="text-sm font-semibold text-foreground">
+              Mobile Banner
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Optional — no mobile carousel if empty (shows default image).
+              Upload 9:16 ratio images (TikTok / Instagram Reels size, e.g.
+              1080x1920).
+            </p>
+            <div className="space-y-2">
+              <Label>Mobile Image (optional)</Label>
+              <ImageUpload
+                value={mobileImage}
+                onChange={setMobileImage}
+                uploading={mobileUploading}
+                fileInputRef={mobileFileInputRef}
+                onUpload={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  // Validate 9:16 aspect ratio via naturalWidth/naturalHeight
+                  const img = new window.Image();
+                  img.onload = () => {
+                    const ratio = img.width / img.height;
+                    const isCorrectRatio = Math.abs(ratio - 9 / 16) < 0.05;
+                    if (!isCorrectRatio) {
+                      toast.error(
+                        `Image must be 9:16 ratio (portrait). Yours is ${img.width}x${img.height} (${ratio.toFixed(2)}). Use a TikTok/Instagram Reels sized image.`
+                      );
+                      if (mobileFileInputRef.current)
+                        mobileFileInputRef.current.value = "";
+                      return;
+                    }
+                    // Proceed with upload
+                    handleImageUpload(e, "mobile");
+                  };
+                  img.src = URL.createObjectURL(file);
+                }}
+                label="Upload Mobile Image (9:16)"
+              />
+              <button
+                type="button"
+                onClick={() => setMobileImage("/mobile-view.png")}
+                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              >
+                Or use default mobile-view.png
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="space-y-4 border-t border-border pt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Title (optional)</Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Summer Collection" />
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Summer Collection"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Page Type</Label>
-                <Select value={pageType} onValueChange={(v) => v && setPageType(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={pageType}
+                  onValueChange={(v) => v && setPageType(v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="home">Home</SelectItem>
                     <SelectItem value="mineral">Mineral</SelectItem>
@@ -278,80 +381,59 @@ export function BannerActions({ banner }: BannerActionsProps) {
             </div>
             <div className="space-y-2">
               <Label>Description (optional)</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Banner description text..." />
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+                placeholder="Banner description text..."
+              />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>CTA Label (optional)</Label>
-                <Input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} placeholder="Shop Now" />
+                <Input
+                  value={ctaLabel}
+                  onChange={(e) => setCtaLabel(e.target.value)}
+                  placeholder="Shop Now"
+                />
               </div>
               <div className="space-y-2">
                 <Label>CTA URL (optional)</Label>
-                <Input value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} placeholder="/auctions" />
+                <Input
+                  value={ctaUrl}
+                  onChange={(e) => setCtaUrl(e.target.value)}
+                  placeholder="/auctions"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Sort Order</Label>
-                <Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} min={0} />
+                <Input
+                  type="number"
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(Number(e.target.value))}
+                  min={0}
+                />
               </div>
             </div>
           </div>
 
-          {/* Dark Theme Toggle */}
-          <div className="border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={() => setShowDark(!showDark)}
-              className="flex items-center gap-2 text-sm font-semibold text-foreground hover:opacity-80"
-            >
-              <div className="h-6 w-6 rounded-full bg-gray-900 border border-gray-700" />
-              Dark Theme Banner
-              <svg className={`h-4 w-4 transition-transform ${showDark ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {showDark && (
-              <div className="mt-4 space-y-4 rounded-xl border border-border bg-secondary/30 p-4">
-                <div className="space-y-2">
-                  <Label>Dark Theme Image (optional — uses light image if empty)</Label>
-                  <ImageUpload
-                    value={darkImage}
-                    onChange={setDarkImage}
-                    uploading={darkUploading}
-                    fileInputRef={darkFileInputRef}
-                    onUpload={(e) => handleImageUpload(e, true)}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Dark Title (optional)</Label>
-                    <Input value={darkTitle} onChange={(e) => setDarkTitle(e.target.value)} placeholder="Overrides light title" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Dark CTA Label (optional)</Label>
-                    <Input value={darkCtaLabel} onChange={(e) => setDarkCtaLabel(e.target.value)} placeholder="Overrides light CTA" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Dark Description (optional)</Label>
-                  <Textarea value={darkDescription} onChange={(e) => setDarkDescription(e.target.value)} rows={2} placeholder="Overrides light description" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Dark CTA URL (optional)</Label>
-                  <Input value={darkCtaUrl} onChange={(e) => setDarkCtaUrl(e.target.value)} placeholder="/auctions" />
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Actions */}
           <div className="flex gap-4 pt-2 border-t border-border">
-            <Button type="submit" className="rounded-full" disabled={loading}>
-              {loading ? "Saving..." : isEditing ? "Update Banner" : "Create Banner"}
+            <Button type="submit" className="rounded-full" disabled={loading || deleting}>
+              {loading
+                ? "Saving..."
+                : isEditing
+                  ? "Update Banner"
+                  : "Create Banner"}
             </Button>
             {isEditing && (
-              <Button type="button" variant="destructive" onClick={handleDelete}>
-                Delete
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete"}
               </Button>
             )}
           </div>

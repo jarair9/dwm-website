@@ -25,10 +25,16 @@ export default async function AuctionDetailPage({ params }: Props) {
 
   if (!lot) notFound();
 
-  // Auto-close expired auctions
+  // Auto-close expired auctions in batch (not per-lot)
   if (lot.status === "live" && new Date(lot.end_time) <= new Date()) {
-    await supabase.rpc("close_auction", { p_lot_id: lot.id });
-    lot.status = "closed";
+    await supabase.rpc("close_all_expired_auctions");
+    // Re-fetch to get updated status
+    const { data: refreshed } = await supabase
+      .from("lots")
+      .select("*, categories(name, slug)")
+      .eq("slug", slug)
+      .single();
+    if (refreshed) Object.assign(lot, refreshed);
   }
 
   const category = lot.categories as { name: string; slug: string } | null;

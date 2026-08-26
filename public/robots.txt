@@ -1,0 +1,18 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /profile/
+Disallow: /favorites/
+
+Allow: /
+Allow: /auctions/
+Allow: /minerals/
+Allow: /gemstones/
+Allow: /about
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Allow: /shipping
+Allow: /returns
+
+Sitemap: https://distinctmineralworld.com/sitemap.xml

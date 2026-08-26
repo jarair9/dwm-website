@@ -47,12 +47,21 @@ export const metadata: Metadata = {
     title: "Distinct Mineral World — Rare Gemstone Auctions",
     description:
       "A curated digital auction house for rare minerals and gemstones.",
+    images: [
+      {
+        url: "/hero-banner.png",
+        width: 1200,
+        height: 630,
+        alt: "Distinct Mineral World — Rare Gemstone Auctions",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Distinct Mineral World — Rare Gemstone Auctions",
     description:
       "A curated digital auction house for rare minerals and gemstones.",
+    images: ["/hero-banner.png"],
   },
   robots: {
     index: true,

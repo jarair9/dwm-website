@@ -11,7 +11,10 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    // Log to external service in production, not console
+    if (process.env.NODE_ENV === "production") {
+      // TODO: Send to Sentry, LogRocket, etc.
+    }
   }, [error]);
 
   return (

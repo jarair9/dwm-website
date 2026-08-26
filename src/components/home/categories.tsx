@@ -35,7 +35,7 @@ export function Categories({ categories }: CategoriesProps) {
 
         {categories.length > 0 ? (
           <>
-            <div className={`mt-16 grid gap-8 ${categories.length === 1 ? "grid-cols-1 justify-items-center max-w-xs mx-auto" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"}`}>
+            <div className={`mt-12 grid gap-4 ${categories.length === 1 ? "grid-cols-1 justify-items-center max-w-xs mx-auto" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"}`}>
               {visibleCategories.map((category) => (
                 <Link
                   key={category.slug}
@@ -48,14 +48,14 @@ export function Categories({ categories }: CategoriesProps) {
                   }
                   className="group flex flex-col items-center"
                 >
-                  <div className="relative h-40 w-40 overflow-hidden rounded-[2rem] border-2 border-border/50 bg-secondary/30 transition-all duration-300 group-hover:border-foreground/30 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:scale-105">
+                  <div className="relative h-48 w-48 overflow-hidden rounded-[2rem] border-2 border-border/50 bg-secondary/30 transition-all duration-300 group-hover:border-foreground/30 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:scale-105">
                     {category.imageUrl ? (
                       <Image
                         src={category.imageUrl}
                         alt={category.name}
                         fill
                         className="object-cover"
-                        sizes="160px"
+                        sizes="192px"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">
@@ -63,7 +63,7 @@ export function Categories({ categories }: CategoriesProps) {
                       </div>
                     )}
                   </div>
-                  <p className="mt-4 text-center text-sm font-semibold text-foreground transition-colors group-hover:text-muted-foreground">
+                  <p className="mt-3 text-center text-sm font-semibold text-foreground transition-colors group-hover:text-muted-foreground">
                     {category.name}
                   </p>
                 </Link>

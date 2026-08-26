@@ -3,7 +3,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/product/product-card";
 
 export const metadata: Metadata = {
@@ -28,10 +27,21 @@ export default async function MineralsPage({
     .eq("type", "mineral")
     .order("name");
 
-  const parentCategories = allCategories?.filter((c) => !c.parent_id) || [];
-  const subCategories = allCategories?.filter((c) => c.parent_id) || [];
+  const categories = allCategories || [];
+  const parentCategories = categories.filter((c) => !c.parent_id);
+  const subCategories = categories.filter((c) => c.parent_id);
 
-  const categoryIds = allCategories?.map((c) => c.id) || [];
+  // Track active category + its parent for highlight state
+  const activeCategoryIds = new Set<string>();
+  if (categoryFilter) {
+    activeCategoryIds.add(categoryFilter);
+    const selectedSub = subCategories.find((s) => s.id === categoryFilter);
+    if (selectedSub?.parent_id) {
+      activeCategoryIds.add(selectedSub.parent_id);
+    }
+  }
+
+  const categoryIds = categories.map((c) => c.id);
 
   let query = supabase.from("lots").select("*, categories(name)");
 
@@ -41,8 +51,7 @@ export default async function MineralsPage({
     query = query.in("category_id", categoryIds);
   }
 
-  const { data: lots } = await query
-    .order("created_at", { ascending: false });
+  const { data: lots } = await query.order("created_at", { ascending: false });
 
   const minerals =
     lots?.map((lot) => ({
@@ -55,14 +64,25 @@ export default async function MineralsPage({
     })) || [];
 
   const getCategoryName = (id: string) =>
-    allCategories?.find((c) => c.id === id)?.name || "";
+    categories.find((c) => c.id === id)?.name || "";
+
+  // Determine which subcategories to show
+  const selectedParentId = parentCategories.find((p) =>
+    subCategories.some((s) => s.parent_id === p.id && s.id === categoryFilter)
+  )?.id;
+
+  const visibleSubcategories = selectedParentId
+    ? subCategories.filter((s) => s.parent_id === selectedParentId)
+    : subCategories.filter((s) => s.parent_id === categoryFilter);
+
+  const hasNoCategories = parentCategories.length === 0;
 
   return (
     <>
       <Navbar />
       <main className="flex-1">
         <section className="bg-background py-16 pt-24 lg:pt-20">
-          <div className="mx-auto max-w-7xl px-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="text-center">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 Collection
@@ -76,67 +96,124 @@ export default async function MineralsPage({
               </p>
             </div>
 
-            {/* Parent Category Filters */}
-            {parentCategories.length > 0 && (
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
-                <Link href="/minerals">
-                  <Badge
-                    variant={!categoryFilter ? "default" : "outline"}
-                    className="cursor-pointer px-4 py-2 text-sm"
-                  >
-                    All Minerals
-                  </Badge>
+            {hasNoCategories ? (
+              <div className="mt-16 rounded-2xl border border-border/50 bg-secondary/30 py-20 text-center">
+                <p className="text-5xl">🪨</p>
+                <p className="mt-6 text-xl font-medium text-foreground">
+                  Mineral categories coming soon
+                </p>
+                <p className="mt-2 max-w-md mx-auto text-muted-foreground">
+                  We&apos;re curating our mineral collection. Check back soon or
+                  browse our gemstone auctions.
+                </p>
+                <Link
+                  href="/gemstones"
+                  className="mt-6 inline-flex items-center rounded-full bg-foreground px-6 py-2.5 text-sm font-medium text-background transition-all hover:bg-foreground/90"
+                >
+                  Browse Gemstones
                 </Link>
-                {parentCategories.map((category) => (
-                  <Link key={category.id} href={`/minerals?category=${category.id}`}>
-                    <Badge
-                      variant={categoryFilter === category.id ? "default" : "outline"}
-                      className="cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-foreground hover:text-background"
-                    >
-                      {category.name}
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* Subcategory Filters */}
-            {categoryFilter && subCategories.filter((s) => s.parent_id === categoryFilter).length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                <Link href={`/minerals?category=${categoryFilter}`}>
-                  <Badge variant="default" className="cursor-pointer px-3 py-1.5 text-xs">
-                    All {getCategoryName(categoryFilter)}
-                  </Badge>
-                </Link>
-                {subCategories
-                  .filter((s) => s.parent_id === categoryFilter)
-                  .map((sub) => (
-                    <Link key={sub.id} href={`/minerals?category=${sub.id}`}>
-                      <Badge
-                        variant={categoryFilter === sub.id ? "default" : "outline"}
-                        className="cursor-pointer px-3 py-1.5 text-xs transition-colors hover:bg-foreground hover:text-background"
-                      >
-                        {sub.name}
-                      </Badge>
-                    </Link>
-                  ))}
-              </div>
-            )}
-
-            {minerals.length > 0 ? (
-              <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {minerals.map((mineral) => (
-                  <ProductCard key={mineral.id} product={mineral} />
-                ))}
               </div>
             ) : (
-              <div className="mt-12 rounded-2xl border border-border/50 bg-secondary/30 py-16 text-center">
-                <p className="text-lg text-muted-foreground">
-                  {categoryFilter
-                    ? `No ${getCategoryName(categoryFilter)} minerals available`
-                    : "Mineral specimens coming soon"}
-                </p>
-              </div>
+              <>
+                {/* Parent Category Filters */}
+                {parentCategories.length > 0 && (
+                  <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+                    <Link
+                      href="/minerals"
+                      className={`inline-flex items-center rounded-full border px-6 py-2.5 text-sm font-medium transition-all ${
+                        !categoryFilter
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border text-foreground hover:border-foreground/50 hover:bg-secondary"
+                      }`}
+                    >
+                      All Minerals
+                    </Link>
+                    {parentCategories.map((category) => {
+                      const isActive = activeCategoryIds.has(category.id);
+                      const hasSubSelected =
+                        categoryFilter &&
+                        subCategories.some(
+                          (s) =>
+                            s.parent_id === category.id &&
+                            s.id === categoryFilter
+                        );
+
+                      return (
+                        <Link
+                          key={category.id}
+                          href={`/minerals?category=${category.id}`}
+                          className={`inline-flex items-center rounded-full border px-6 py-2.5 text-sm font-medium transition-all ${
+                            isActive || hasSubSelected
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border text-foreground hover:border-foreground/50 hover:bg-secondary"
+                          }`}
+                        >
+                          {category.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Subcategory Filters */}
+                {visibleSubcategories.length > 0 && (
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                    <Link
+                      href={
+                        categoryFilter &&
+                        subCategories.some((s) => s.id === categoryFilter)
+                          ? `/minerals?category=${
+                              subCategories.find(
+                                (s) => s.id === categoryFilter
+                              )?.parent_id || categoryFilter
+                            }`
+                          : `/minerals?category=${categoryFilter}`
+                      }
+                      className={`inline-flex items-center rounded-full border px-5 py-2 text-xs font-medium transition-all ${
+                        categoryFilter &&
+                        !subCategories.some((s) => s.id === categoryFilter)
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                      }`}
+                    >
+                      All{" "}
+                      {getCategoryName(
+                        visibleSubcategories[0]?.parent_id || categoryFilter
+                      )}
+                    </Link>
+                    {visibleSubcategories.map((sub) => (
+                      <Link
+                        key={sub.id}
+                        href={`/minerals?category=${sub.id}`}
+                        className={`inline-flex items-center rounded-full border px-5 py-2 text-xs font-medium transition-all ${
+                          categoryFilter === sub.id
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                        }`}
+                      >
+                        {sub.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* Results */}
+                {minerals.length > 0 ? (
+                  <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+                    {minerals.map((mineral) => (
+                      <ProductCard key={mineral.id} product={mineral} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-12 rounded-2xl border border-border/50 bg-secondary/30 py-16 text-center">
+                    <p className="text-lg text-muted-foreground">
+                      {categoryFilter
+                        ? `No ${getCategoryName(categoryFilter)} minerals available`
+                        : "Mineral specimens coming soon"}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>

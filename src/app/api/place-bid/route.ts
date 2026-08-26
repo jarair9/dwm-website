@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { checkRateLimit } from "@/lib/rate-limit";
+
+const placeBidSchema = z.object({
+  auction_id: z.string().uuid("Invalid auction ID"),
+  amount: z
+    .number()
+    .positive("Bid amount must be positive")
+    .max(10_000_000, "Bid amount exceeds maximum allowed")
+    .finite("Bid amount must be a finite number"),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Verify authentication
     const {
       data: { user },
       error: authError,
@@ -18,21 +28,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { auction_id, amount } = body;
-
-    if (!auction_id || !amount) {
+    // Rate limit: 5 bids per 10 seconds per user
+    const rateLimit = await checkRateLimit(`bid:${user.id}`, 5, 10);
+    if (!rateLimit.allowed) {
       return NextResponse.json(
-        { success: false, message: "Missing required fields" },
+        {
+          success: false,
+          message: "Too many bid attempts. Please wait a moment.",
+        },
+        { status: 429 }
+      );
+    }
+
+    const body = await request.json();
+
+    const parsed = placeBidSchema.safeParse(body);
+    if (!parsed.success) {
+      const message =
+        parsed.error.issues[0]?.message || "Invalid request data";
+      return NextResponse.json(
+        { success: false, message },
         { status: 400 }
       );
     }
 
-    // Check if user has completed profile
+    const { auction_id, amount } = parsed.data;
+
     const { data: profile } = await supabase
-      .from("users")
-      .select("full_name, email, phone")
-      .eq("id", user.id)
+      .from("profiles")
+      .select("id, full_name, email, phone")
+      .eq("auth_id", user.id)
       .single();
 
     if (!profile?.full_name || !profile?.email || !profile?.phone) {
@@ -46,17 +71,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call the place_bid RPC function
-    // Note: In production, use service_role key for this call
-    // For now, we'll use the anon key since the RPC is security definer
     const { data, error } = await supabase.rpc("place_bid", {
       p_auction_id: auction_id,
-      p_bidder_id: user.id,
+      p_bidder_id: profile.id,
       p_amount: amount,
     });
 
     if (error) {
-      console.error("RPC error:", error);
+      console.error("RPC error:", error.message);
       return NextResponse.json(
         { success: false, message: "Failed to place bid" },
         { status: 500 }
@@ -78,8 +100,7 @@ export async function POST(request: NextRequest) {
       message: "Bid placed successfully",
       new_end_time: data.new_end_time,
     });
-  } catch (error) {
-    console.error("Place bid error:", error);
+  } catch {
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

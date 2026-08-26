@@ -35,7 +35,7 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Admin protection
+  // Admin protection — single source of truth
   if (pathname.startsWith("/admin")) {
     if (!user) {
       const url = request.nextUrl.clone();
@@ -44,27 +44,20 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Check admin role: auth metadata OR profiles table
-    const authRole = user.user_metadata?.role || user.app_metadata?.role;
-    let isAdmin = authRole === "admin";
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("auth_id", user.id)
+      .single();
 
-    if (!isAdmin) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("auth_id", user.id)
-        .single();
-      isAdmin = profile?.role === "admin";
-    }
-
-    if (!isAdmin) {
+    if (profile?.role !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);
     }
   }
 
-  // Auth page protection — redirect logged-in users
+  // Auth page protection — redirect logged-in users away from login/register
   if (pathname === "/login" || pathname === "/register") {
     if (user) {
       const url = request.nextUrl.clone();

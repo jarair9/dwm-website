@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { LoginForm } from "@/components/login-form";
 
 export default function LoginPage() {
@@ -16,15 +15,7 @@ export default function LoginPage() {
         <LoginForm />
       </Suspense>
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/register"
-          className="font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
-        >
-          Register
-        </Link>
-      </p>
+
     </div>
   );
 }

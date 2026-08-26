@@ -7,6 +7,7 @@ import { FeaturedSpecimens } from "@/components/home/featured-specimens";
 import { StorySection } from "@/components/home/story-section";
 import { Categories } from "@/components/home/categories";
 import { AuctionLinks } from "@/components/home/auction-links";
+import { TrustSignals } from "@/components/home/trust-signals";
 import { CTASection } from "@/components/home/cta-section";
 import { Testimonials } from "@/components/home/testimonials";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -34,6 +35,7 @@ export default async function HomePage() {
       <main className="flex-1">
         <Hero />
         <LiveAuctions />
+        <TrustSignals />
         <AuctionLinks />
         <FeaturedSpecimens />
         <StorySection />
