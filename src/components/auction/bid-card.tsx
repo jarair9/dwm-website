@@ -20,10 +20,24 @@ interface BidCardProps {
   showUrgency?: boolean;
 }
 
+const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: boolean }> = {
+  live: { label: "LIVE", color: "bg-red-500", pulse: true },
+  upcoming: { label: "UPCOMING", color: "bg-blue-500" },
+  sold: { label: "SOLD", color: "bg-gray-800" },
+  closed: { label: "ENDED", color: "bg-gray-500" },
+  not_sold: { label: "NOT SOLD", color: "bg-amber-600" },
+  awaiting_payment: { label: "SOLD", color: "bg-gray-800" },
+};
+
 export function BidCard({ auction, showUrgency }: BidCardProps) {
   const hasBids = auction.currentBid > auction.startingPrice;
   const timeLeft = Math.max(0, Math.floor((new Date(auction.endTime).getTime() - Date.now()) / 1000));
   const isEndingSoon = timeLeft > 0 && timeLeft < 3600;
+  const isLive = auction.status === "live";
+  const isNotSold = auction.status === "not_sold";
+  const isClosed = auction.status === "closed" || auction.status === "sold" || auction.status === "awaiting_payment";
+
+  const statusStyle = STATUS_CONFIG[auction.status || "live"] || STATUS_CONFIG.live;
 
   return (
     <Link href={`/auctions/${auction.slug}`} className="group block">
@@ -37,15 +51,17 @@ export function BidCard({ auction, showUrgency }: BidCardProps) {
             className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
           />
-          {/* Live badge */}
+          {/* Status badge */}
           <div className="absolute top-2 left-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              LIVE
+            <span className={`inline-flex items-center gap-1 rounded-full ${statusStyle.color} px-2 py-0.5 text-[10px] font-bold text-white shadow-sm`}>
+              {statusStyle.pulse && (
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              )}
+              {statusStyle.label}
             </span>
           </div>
           {/* Ending Soon badge */}
-          {isEndingSoon && showUrgency && (
+          {isEndingSoon && showUrgency && isLive && (
             <div className="absolute top-2 right-12">
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
                 ENDING SOON
@@ -74,21 +90,46 @@ export function BidCard({ auction, showUrgency }: BidCardProps) {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Ends in
-              </p>
-              <CountdownTimer endTime={auction.endTime} />
+              {isLive ? (
+                <>
+                  <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Ends in
+                  </p>
+                  <CountdownTimer endTime={auction.endTime} />
+                </>
+              ) : isNotSold ? (
+                <p className="text-[10px] font-semibold text-amber-600">
+                  Contact to Buy
+                </p>
+              ) : isClosed ? (
+                <p className="text-[10px] font-semibold text-muted-foreground">
+                  Auction Ended
+                </p>
+              ) : null}
             </div>
           </div>
 
-          {/* Place Bid button */}
+          {/* Action button */}
           <div className="mt-3">
-            <span className="flex w-full items-center justify-center rounded-xl bg-foreground py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-background transition-all group-hover:bg-foreground/90">
-              Place Bid
-              <svg className="ml-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </span>
+            {isLive ? (
+              <span className="flex w-full items-center justify-center rounded-xl bg-foreground py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-background transition-all group-hover:bg-foreground/90">
+                Place Bid
+                <svg className="ml-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </span>
+            ) : isNotSold ? (
+              <span className="flex w-full items-center justify-center rounded-xl border border-foreground/20 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-foreground transition-all group-hover:bg-secondary">
+                Contact to Purchase
+                <svg className="ml-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+              </span>
+            ) : (
+              <span className="flex w-full items-center justify-center rounded-xl border border-border py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-muted-foreground">
+                {auction.status === "sold" ? "Sold" : "View Details"}
+              </span>
+            )}
           </div>
         </div>
       </div>

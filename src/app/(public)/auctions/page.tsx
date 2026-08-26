@@ -21,7 +21,7 @@ export default async function AuctionsPage({
 
   const supabase = await createClient();
 
-  const query = supabase.from("lots").select("*");
+  const query = supabase.from("lots").select("*").eq("type", "lot");
 
   if (statusFilter === "closed") {
     query.in("status", ["closed", "sold", "not_sold"]);
@@ -37,7 +37,7 @@ export default async function AuctionsPage({
   }
 
   // Re-fetch with updated statuses
-  const reQuery = supabase.from("lots").select("*");
+  const reQuery = supabase.from("lots").select("*").eq("type", "lot");
   if (statusFilter === "closed") {
     reQuery.in("status", ["closed", "sold", "not_sold"]);
   } else if (statusFilter === "upcoming") {

@@ -175,6 +175,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
       start_time: new Date(startTime).toISOString(),
       end_time: new Date(endTime).toISOString(),
       status,
+      type: "lot",
       category_id: categoryId || null,
       images: imageUrls,
       featured,

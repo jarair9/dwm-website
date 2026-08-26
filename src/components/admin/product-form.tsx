@@ -110,7 +110,9 @@ export function ProductForm({ product, categories }: ProductFormProps) {
     e.preventDefault();
     setLoading(true);
 
-    const now = new Date().toISOString();
+    const now = new Date();
+    const farFuture = new Date(now.getTime());
+    farFuture.setFullYear(farFuture.getFullYear() + 1);
     const productData = {
       name,
       slug,
@@ -118,9 +120,10 @@ export function ProductForm({ product, categories }: ProductFormProps) {
       starting_bid: price,
       current_bid: price,
       bid_increment: 5,
-      start_time: now,
-      end_time: now,
+      start_time: now.toISOString(),
+      end_time: farFuture.toISOString(),
       status: "live",
+      type: "product",
       category_id: categoryId || null,
       images: images.split("\n").map((u) => u.trim()).filter(Boolean),
       featured,

@@ -10,6 +10,7 @@ export default async function AdminLotsPage() {
   const { data: lots } = await supabase
     .from("lots")
     .select("*, categories(name, type)")
+    .eq("type", "lot")
     .order("created_at", { ascending: false });
 
   const { data: categories } = await supabase

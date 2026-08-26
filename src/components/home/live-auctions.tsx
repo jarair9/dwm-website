@@ -9,6 +9,7 @@ export async function LiveAuctions() {
     .from("lots")
     .select("*")
     .eq("status", "live")
+    .eq("type", "lot")
     .order("end_time", { ascending: true })
     .limit(8);
 
@@ -20,6 +21,7 @@ export async function LiveAuctions() {
     .from("lots")
     .select("*")
     .eq("status", "live")
+    .eq("type", "lot")
     .order("end_time", { ascending: true })
     .limit(8);
 

@@ -15,9 +15,42 @@ interface Banner {
   cta_url: string | null;
 }
 
+interface HeroSettings {
+  hero_headline: string;
+  hero_heading_line2: string | null;
+  hero_subheadline: string | null;
+  hero_cta_label: string | null;
+  hero_cta_url: string | null;
+  hero_cta2_label: string | null;
+  hero_cta2_url: string | null;
+  hero_stat1_value: string | null;
+  hero_stat1_label: string | null;
+  hero_stat2_value: string | null;
+  hero_stat2_label: string | null;
+  hero_stat3_value: string | null;
+  hero_stat3_label: string | null;
+}
+
+const DEFAULT_SETTINGS: HeroSettings = {
+  hero_headline: "Rare Minerals.",
+  hero_heading_line2: "Exceptional Craft.",
+  hero_subheadline: null,
+  hero_cta_label: "Enter Auction",
+  hero_cta_url: "/auctions",
+  hero_cta2_label: "View Collection",
+  hero_cta2_url: "/minerals",
+  hero_stat1_value: "200+",
+  hero_stat1_label: "Specimens Sold",
+  hero_stat2_value: "50+",
+  hero_stat2_label: "Countries",
+  hero_stat3_value: "$2M+",
+  hero_stat3_label: "Total Volume",
+};
+
 export function Hero() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [mobileBanners, setMobileBanners] = useState<Banner[]>([]);
+  const [settings, setSettings] = useState<HeroSettings>(DEFAULT_SETTINGS);
   const [current, setCurrent] = useState(0);
   const [mobileCurrent, setMobileCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -25,20 +58,23 @@ export function Hero() {
   useEffect(() => {
     const supabase = createClient();
     Promise.all([
-      // Desktop banners
       supabase
         .from("banners")
         .select("id, image, mobile_image, title, description, cta_label, cta_url")
         .eq("page_type", "home")
         .order("sort_order", { ascending: true }),
-      // Mobile banners (only those with mobile_image)
       supabase
         .from("banners")
         .select("id, image, mobile_image, title, description, cta_label, cta_url")
         .eq("page_type", "home")
         .not("mobile_image", "is", null)
         .order("sort_order", { ascending: true }),
-    ]).then(([desktopRes, mobileRes]) => {
+      supabase
+        .from("site_settings")
+        .select("*")
+        .eq("id", 1)
+        .single(),
+    ]).then(([desktopRes, mobileRes, settingsRes]) => {
       const defaultBanner: Banner = {
         id: "default",
         image: "/hero-banner.png",
@@ -50,6 +86,23 @@ export function Hero() {
       };
       setBanners([defaultBanner, ...(desktopRes.data || [])]);
       setMobileBanners(mobileRes.data || []);
+      if (settingsRes.data) {
+        setSettings({
+          hero_headline: settingsRes.data.hero_headline || DEFAULT_SETTINGS.hero_headline,
+          hero_heading_line2: settingsRes.data.hero_heading_line2 || DEFAULT_SETTINGS.hero_heading_line2,
+          hero_subheadline: settingsRes.data.hero_subheadline,
+          hero_cta_label: settingsRes.data.hero_cta_label || DEFAULT_SETTINGS.hero_cta_label,
+          hero_cta_url: settingsRes.data.hero_cta_url || DEFAULT_SETTINGS.hero_cta_url,
+          hero_cta2_label: settingsRes.data.hero_cta2_label,
+          hero_cta2_url: settingsRes.data.hero_cta2_url,
+          hero_stat1_value: settingsRes.data.hero_stat1_value,
+          hero_stat1_label: settingsRes.data.hero_stat1_label,
+          hero_stat2_value: settingsRes.data.hero_stat2_value,
+          hero_stat2_label: settingsRes.data.hero_stat2_label,
+          hero_stat3_value: settingsRes.data.hero_stat3_value,
+          hero_stat3_label: settingsRes.data.hero_stat3_label,
+        });
+      }
       setLoading(false);
     });
   }, []);
@@ -63,7 +116,7 @@ export function Hero() {
     return () => clearInterval(timer);
   }, [banners.length]);
 
-  // Mobile auto-scroll (only if mobile banners exist)
+  // Mobile auto-scroll
   useEffect(() => {
     if (mobileBanners.length <= 1) return;
     const timer = setInterval(() => {
@@ -72,7 +125,7 @@ export function Hero() {
     return () => clearInterval(timer);
   }, [mobileBanners.length]);
 
-  if (loading) return <LoadingSkeleton />;
+  if (loading) return <LoadingSkeleton settings={settings} />;
 
   const banner = banners[current];
   const hasMobileBanners = mobileBanners.length > 0;
@@ -84,7 +137,6 @@ export function Hero() {
         <div className="relative h-[80vh]">
           {hasMobileBanners ? (
             <>
-              {/* Mobile carousel — only banners with mobile_image */}
               {mobileBanners.map((b, i) => (
                 <div
                   key={b.id}
@@ -104,8 +156,6 @@ export function Hero() {
                   />
                 </div>
               ))}
-
-              {/* Mobile dots */}
               <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-2">
                 {mobileBanners.map((b, i) => (
                   <button
@@ -119,7 +169,6 @@ export function Hero() {
               </div>
             </>
           ) : (
-            /* Fallback: static mobile-view.png */
             <Image
               src="/mobile-view.png"
               alt="Distinct Mineral World"
@@ -130,7 +179,7 @@ export function Hero() {
             />
           )}
         </div>
-        <Stats />
+        <Stats settings={settings} />
       </section>
 
       {/* Desktop — banner carousel with text */}
@@ -167,28 +216,34 @@ export function Hero() {
                 </p>
               )}
               <h1 className="font-serif text-5xl font-bold leading-[1.1] tracking-tight text-black md:text-6xl lg:text-7xl">
-                Rare Minerals.
-                <br />
-                <span className="text-black/70">Exceptional Craft.</span>
+                {settings.hero_headline}
+                {settings.hero_heading_line2 && (
+                  <>
+                    <br />
+                    <span className="text-black/70">{settings.hero_heading_line2}</span>
+                  </>
+                )}
               </h1>
-              {banner.description && (
+              {(banner.description || settings.hero_subheadline) && (
                 <p className="mt-6 max-w-md text-lg leading-relaxed text-black/70">
-                  {banner.description}
+                  {banner.description || settings.hero_subheadline}
                 </p>
               )}
               <div className="mt-10 flex items-center gap-4">
                 <Link
-                  href={banner.cta_url || "/auctions"}
+                  href={banner.cta_url || settings.hero_cta_url || "/auctions"}
                   className="rounded-full bg-black px-8 py-3.5 text-sm font-medium text-white transition-all hover:bg-black/80 hover:shadow-lg"
                 >
-                  {banner.cta_label || "Enter Auction"}
+                  {banner.cta_label || settings.hero_cta_label || "Enter Auction"}
                 </Link>
-                <Link
-                  href="/minerals"
-                  className="rounded-full border border-black/20 px-8 py-3.5 text-sm font-medium text-black transition-all hover:bg-black/5"
-                >
-                  View Collection
-                </Link>
+                {settings.hero_cta2_label && (
+                  <Link
+                    href={settings.hero_cta2_url || "/minerals"}
+                    className="rounded-full border border-black/20 px-8 py-3.5 text-sm font-medium text-black transition-all hover:bg-black/5"
+                  >
+                    {settings.hero_cta2_label}
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -207,14 +262,14 @@ export function Hero() {
             </div>
           )}
 
-          <Stats />
+          <Stats settings={settings} />
         </div>
       </section>
     </>
   );
 }
 
-function LoadingSkeleton() {
+function LoadingSkeleton({ settings }: { settings: HeroSettings }) {
   return (
     <>
       <section className="relative block sm:hidden w-full bg-white">
@@ -228,7 +283,7 @@ function LoadingSkeleton() {
             sizes="100vw"
           />
         </div>
-        <Stats />
+        <Stats settings={settings} />
       </section>
       <section className="relative hidden sm:block h-screen w-full overflow-hidden bg-white">
         <Image
@@ -243,50 +298,58 @@ function LoadingSkeleton() {
           <div className="h-16" />
           <div className="mx-auto flex w-full max-w-7xl flex-1 items-center px-6">
             <div className="max-w-2xl">
-              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-black/70">
-                Curated Auction House
-              </p>
               <h1 className="font-serif text-5xl font-bold leading-[1.1] tracking-tight text-black md:text-6xl lg:text-7xl">
-                Rare Minerals.
-                <br />
-                <span className="text-black/70">Exceptional Craft.</span>
+                {settings.hero_headline}
+                {settings.hero_heading_line2 && (
+                  <>
+                    <br />
+                    <span className="text-black/70">{settings.hero_heading_line2}</span>
+                  </>
+                )}
               </h1>
-              <p className="mt-6 max-w-md text-lg leading-relaxed text-black/70">
-                Museum-quality gemstones and minerals, presented with the
-                reverence they deserve.
-              </p>
+              {settings.hero_subheadline && (
+                <p className="mt-6 max-w-md text-lg leading-relaxed text-black/70">
+                  {settings.hero_subheadline}
+                </p>
+              )}
               <div className="mt-10 flex items-center gap-4">
                 <Link
-                  href="/auctions"
+                  href={settings.hero_cta_url || "/auctions"}
                   className="rounded-full bg-black px-8 py-3.5 text-sm font-medium text-white transition-all hover:bg-black/80 hover:shadow-lg"
                 >
-                  Enter Auction
+                  {settings.hero_cta_label || "Enter Auction"}
                 </Link>
-                <Link
-                  href="/minerals"
-                  className="rounded-full border border-black/20 px-8 py-3.5 text-sm font-medium text-black transition-all hover:bg-black/5"
-                >
-                  View Collection
-                </Link>
+                {settings.hero_cta2_label && (
+                  <Link
+                    href={settings.hero_cta2_url || "/minerals"}
+                    className="rounded-full border border-black/20 px-8 py-3.5 text-sm font-medium text-black transition-all hover:bg-black/5"
+                  >
+                    {settings.hero_cta2_label}
+                  </Link>
+                )}
               </div>
             </div>
           </div>
-          <Stats />
+          <Stats settings={settings} />
         </div>
       </section>
     </>
   );
 }
 
-function Stats() {
+function Stats({ settings }: { settings: HeroSettings }) {
+  const stats = [
+    { value: settings.hero_stat1_value, label: settings.hero_stat1_label },
+    { value: settings.hero_stat2_value, label: settings.hero_stat2_label },
+    { value: settings.hero_stat3_value, label: settings.hero_stat3_label },
+  ].filter((s) => s.value && s.label);
+
+  if (stats.length === 0) return null;
+
   return (
     <div className="border-t border-black/10 bg-white/80 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-center gap-12 px-6 py-6">
-        {[
-          { value: "200+", label: "Specimens Sold" },
-          { value: "50+", label: "Countries" },
-          { value: "$2M+", label: "Total Volume" },
-        ].map((stat, i) => (
+        {stats.map((stat, i) => (
           <div key={i} className="flex items-center gap-12">
             <div className="text-center">
               <p className="font-serif text-2xl font-bold text-black">
@@ -294,7 +357,7 @@ function Stats() {
               </p>
               <p className="mt-1 text-xs text-black/60">{stat.label}</p>
             </div>
-            {i < 2 && <div className="h-8 w-px bg-black/10" />}
+            {i < stats.length - 1 && <div className="h-8 w-px bg-black/10" />}
           </div>
         ))}
       </div>

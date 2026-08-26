@@ -80,6 +80,21 @@ export default function ContactPage() {
                     Chat on WhatsApp
                   </a>
                 </div>
+
+                <div>
+                  <h3 className="font-serif text-xl font-semibold text-foreground">
+                    Call Us
+                  </h3>
+                  <p className="mt-2 text-muted-foreground">
+                    For immediate assistance and inquiries.
+                  </p>
+                  <a
+                    href="tel:+923109962623"
+                    className="mt-2 inline-block text-sm font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
+                  >
+                    +92 310 9962623
+                  </a>
+                </div>
               </div>
             </div>
           </div>
