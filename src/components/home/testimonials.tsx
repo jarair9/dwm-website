@@ -34,16 +34,12 @@ export async function Testimonials() {
   return (
     <section className="bg-white py-24">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Trusted by Collectors
-          </p>
-          <h2 className="font-serif text-4xl font-bold tracking-tight text-foreground">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="h-px flex-1 bg-red-400" />
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground whitespace-nowrap">
             What Our Clients Say
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Hear from collectors and gem enthusiasts who trust us for museum-quality specimens.
-          </p>
+          <div className="h-px flex-1 bg-red-400" />
         </div>
 
         {/* Trust badges */}

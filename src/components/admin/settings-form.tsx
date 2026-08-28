@@ -37,13 +37,13 @@ export function SettingsForm({ settings }: SettingsFormProps) {
   const [loading, setLoading] = useState(false);
 
   // Heading
-  const [headline, setHeadline] = useState(settings?.hero_headline || "Rare Minerals.");
-  const [headlineLine2, setHeadlineLine2] = useState(settings?.hero_heading_line2 || "Exceptional Craft.");
+  const [headline, setHeadline] = useState(settings?.hero_headline || "");
+  const [headlineLine2, setHeadlineLine2] = useState(settings?.hero_heading_line2 || "");
   const [subheadline, setSubheadline] = useState(settings?.hero_subheadline || "");
 
   // Buttons
-  const [ctaLabel, setCtaLabel] = useState(settings?.hero_cta_label || "Enter Auction");
-  const [ctaUrl, setCtaUrl] = useState(settings?.hero_cta_url || "/auctions");
+  const [ctaLabel, setCtaLabel] = useState(settings?.hero_cta_label || "");
+  const [ctaUrl, setCtaUrl] = useState(settings?.hero_cta_url || "");
   const [cta2Label, setCta2Label] = useState(settings?.hero_cta2_label || "");
   const [cta2Url, setCta2Url] = useState(settings?.hero_cta2_url || "");
 

@@ -16,28 +16,68 @@ interface BidCardProps {
     endTime: string;
     bidIncrement: number;
     status?: string;
+    bidCount?: number;
   };
   showUrgency?: boolean;
+  compact?: boolean;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: boolean }> = {
-  live: { label: "LIVE", color: "bg-red-500", pulse: true },
-  upcoming: { label: "UPCOMING", color: "bg-blue-500" },
-  sold: { label: "SOLD", color: "bg-gray-800" },
-  closed: { label: "ENDED", color: "bg-gray-500" },
-  not_sold: { label: "NOT SOLD", color: "bg-amber-600" },
-  awaiting_payment: { label: "SOLD", color: "bg-gray-800" },
+  live: { label: "LIVE", color: "bg-foreground", pulse: true },
+  upcoming: { label: "UPCOMING", color: "bg-muted" },
+  sold: { label: "SOLD", color: "bg-muted" },
+  closed: { label: "ENDED", color: "bg-muted" },
+  not_sold: { label: "NOT SOLD", color: "bg-muted" },
+  awaiting_payment: { label: "SOLD", color: "bg-muted" },
 };
 
-export function BidCard({ auction, showUrgency }: BidCardProps) {
+export function BidCard({ auction, showUrgency, compact }: BidCardProps) {
   const hasBids = auction.currentBid > auction.startingPrice;
   const timeLeft = Math.max(0, Math.floor((new Date(auction.endTime).getTime() - Date.now()) / 1000));
   const isEndingSoon = timeLeft > 0 && timeLeft < 3600;
   const isLive = auction.status === "live";
   const isNotSold = auction.status === "not_sold";
   const isClosed = auction.status === "closed" || auction.status === "sold" || auction.status === "awaiting_payment";
+  const isUrgent = timeLeft > 0 && timeLeft < 300;
 
   const statusStyle = STATUS_CONFIG[auction.status || "live"] || STATUS_CONFIG.live;
+
+  if (compact) {
+    return (
+      <Link href={`/auctions/${auction.slug}`} className="group block">
+        <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-white p-2.5 transition-all hover:shadow-md">
+          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-secondary/30">
+            <Image
+              src={auction.image}
+              alt={auction.title}
+              fill
+              className="object-cover"
+              sizes="56px"
+            />
+            <div className="absolute top-0.5 left-0.5">
+              <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white ${statusStyle.color}`}>
+                {statusStyle.pulse && <span className="h-1 w-1 rounded-full bg-white animate-pulse" />}
+                {statusStyle.label}
+              </span>
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-foreground truncate">{auction.title}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs font-bold text-foreground">
+                ${((hasBids ? auction.currentBid : auction.startingPrice)).toLocaleString()}
+              </span>
+              {isLive && (
+                <span className={`font-mono text-[10px] font-medium text-muted-foreground`}>
+                  <CountdownTimer endTime={auction.endTime} />
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <Link href={`/auctions/${auction.slug}`} className="group block">
@@ -63,7 +103,7 @@ export function BidCard({ auction, showUrgency }: BidCardProps) {
           {/* Ending Soon badge */}
           {isEndingSoon && showUrgency && isLive && (
             <div className="absolute top-2 right-12">
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+              <span className="inline-flex items-center gap-1 rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-bold text-background">
                 ENDING SOON
               </span>
             </div>

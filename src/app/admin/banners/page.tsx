@@ -30,11 +30,17 @@ export default async function AdminBannersPage() {
           banners.map((banner) => (
             <Card key={banner.id}>
               <CardContent className="flex items-center gap-6 p-4">
-                <img
-                  src={banner.image}
-                  alt={banner.title || "Banner"}
-                  className="h-20 w-40 rounded-lg object-cover"
-                />
+                {(banner.image || banner.mobile_image) ? (
+                  <img
+                    src={banner.image || banner.mobile_image}
+                    alt={banner.title || "Banner"}
+                    className="h-20 w-40 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="h-20 w-40 rounded-lg bg-secondary flex items-center justify-center text-xs text-muted-foreground">
+                    No image
+                  </div>
+                )}
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium">{banner.title || "Untitled"}</h3>

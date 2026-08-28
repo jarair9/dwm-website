@@ -117,12 +117,19 @@ export function BannerActions({ banner }: BannerActionsProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!image && !mobileImage) {
+      toast.error("Upload at least one image (desktop or mobile)");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     const data = {
       title: title || null,
       description: description || null,
-      image,
+      image: image || null,
       mobile_image: mobileImage || null,
       cta_label: ctaLabel || null,
       cta_url: ctaUrl || null,
@@ -307,8 +314,7 @@ export function BannerActions({ banner }: BannerActionsProps) {
             </h3>
             <p className="text-xs text-muted-foreground">
               Optional — no mobile carousel if empty (shows default image).
-              Upload 9:16 ratio images (TikTok / Instagram Reels size, e.g.
-              1080x1920).
+              Any image ratio works — it will auto-fit on mobile.
             </p>
             <div className="space-y-2">
               <Label>Mobile Image (optional)</Label>
@@ -320,25 +326,9 @@ export function BannerActions({ banner }: BannerActionsProps) {
                 onUpload={(e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  // Validate 9:16 aspect ratio via naturalWidth/naturalHeight
-                  const img = new window.Image();
-                  img.onload = () => {
-                    const ratio = img.width / img.height;
-                    const isCorrectRatio = Math.abs(ratio - 9 / 16) < 0.05;
-                    if (!isCorrectRatio) {
-                      toast.error(
-                        `Image must be 9:16 ratio (portrait). Yours is ${img.width}x${img.height} (${ratio.toFixed(2)}). Use a TikTok/Instagram Reels sized image.`
-                      );
-                      if (mobileFileInputRef.current)
-                        mobileFileInputRef.current.value = "";
-                      return;
-                    }
-                    // Proceed with upload
-                    handleImageUpload(e, "mobile");
-                  };
-                  img.src = URL.createObjectURL(file);
+                  handleImageUpload(e, "mobile");
                 }}
-                label="Upload Mobile Image (9:16)"
+                label="Upload Mobile Image"
               />
               <button
                 type="button"

@@ -8,9 +8,9 @@ import { NavUser } from "@/components/layout/nav-user";
 import type { User, Session } from "@supabase/supabase-js";
 
 const AUCTION_DROPDOWN = [
-  { href: "/auctions?status=live", label: "Live Auctions", color: "text-red-500" },
-  { href: "/auctions?status=upcoming", label: "Upcoming Auctions", color: "text-blue-500" },
-  { href: "/auctions?status=closed", label: "Closed Auctions", color: "text-muted-foreground" },
+  { href: "/auctions?status=live", label: "Live Auctions" },
+  { href: "/auctions?status=upcoming", label: "Upcoming Auctions" },
+  { href: "/auctions?status=closed", label: "Closed Auctions" },
 ];
 
 export function Navbar() {
@@ -80,35 +80,32 @@ export function Navbar() {
             : "bg-white/90 backdrop-blur-sm"
         }`}
       >
-        <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          {/* Left: Mobile hamburger + MENU */}
+        <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center px-4 sm:px-6">
+          {/* Left: Mobile hamburger + Logo */}
           <button
             onClick={() => setMobileOpen(true)}
-            className="flex items-center gap-2 lg:hidden"
+            className="flex lg:hidden items-center gap-1.5 mr-3"
           >
             <svg className="h-5 w-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
-            <span className="text-xs font-semibold uppercase tracking-wider text-black">Menu</span>
           </button>
-
-          {/* Center: Logo + Name */}
           <Link href="/" className="flex items-center gap-2 sm:gap-2.5">
             <Image
               src="/logo.png"
               alt="Distinct Mineral World"
               width={48}
               height={48}
-              className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 object-contain"
+              className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 rounded-full object-cover"
               priority
             />
             <span className="font-serif text-sm sm:text-lg lg:text-xl font-extrabold tracking-tight text-black leading-tight">
-              Distinct Mineral<br />World
+              Distinct Mineral World
             </span>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-8">
+          {/* Center: Nav links */}
+          <nav className="hidden lg:flex items-center gap-8 mx-auto">
             {/* Auctions dropdown */}
             <div
               ref={dropdownRef}
@@ -140,13 +137,8 @@ export function Navbar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setAuctionOpen(false)}
-                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-secondary ${item.color}`}
+                      className="flex items-center px-4 py-2.5 text-sm font-medium text-black/80 transition-colors hover:bg-secondary hover:text-black"
                     >
-                      <span className={`h-2 w-2 rounded-full ${
-                        item.color === "text-red-500" ? "bg-red-500" :
-                        item.color === "text-blue-500" ? "bg-blue-500" :
-                        "bg-gray-400"
-                      }`} />
                       {item.label}
                     </Link>
                   ))}
@@ -162,20 +154,20 @@ export function Navbar() {
           </nav>
 
           {/* Right: Favorites + Account */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 ml-auto shrink-0">
             <Link
               href={user ? "/favorites" : "/login"}
-              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-secondary"
+              className="flex items-center text-black/80 transition-colors hover:text-black"
               aria-label="My Favorites"
             >
-              <svg className="h-5 w-5 text-black/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
               </svg>
             </Link>
             {user ? (
               <NavUser user={user} />
             ) : (
-              <Link href="/login" className="rounded-full bg-black px-4 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white transition-colors hover:bg-black/80">
+              <Link href="/login" className="text-xs sm:text-sm font-medium text-black/80 transition-colors hover:text-black whitespace-nowrap">
                 My Account
               </Link>
             )}
@@ -205,13 +197,8 @@ export function Navbar() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                    className="flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                   >
-                    <span className={`h-2 w-2 rounded-full ${
-                      item.color === "text-red-500" ? "bg-red-500" :
-                      item.color === "text-blue-500" ? "bg-blue-500" :
-                      "bg-gray-400"
-                    }`} />
                     {item.label}
                   </Link>
                 ))}
@@ -241,7 +228,7 @@ export function Navbar() {
                   onClick={() => setMobileOpen(false)}
                   className="rounded-lg px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                 >
-                  Profile Settings
+                  My Account
                 </Link>
               ) : (
                 <Link

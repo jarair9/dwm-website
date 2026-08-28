@@ -43,7 +43,6 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.title}
           </h3>
           <div className="mt-2 pt-2 border-t border-border/50">
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Starting from</p>
             <p className="text-sm sm:text-base font-bold text-foreground">
               ${product.price.toLocaleString()}
             </p>

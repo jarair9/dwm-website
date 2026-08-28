@@ -5,51 +5,46 @@ import { createClient } from "@/lib/supabase/server";
 export async function FeaturedSpecimens() {
   const supabase = await createClient();
 
-  const { data: lots } = await supabase
+  const { data: products } = await supabase
     .from("lots")
-    .select("*, categories(name, slug, type)")
+    .select("id, slug, name, images, starting_bid, featured, categories(name, slug, type)")
+    .eq("type", "product")
     .eq("featured", true)
     .in("categories.type", ["mineral", "gemstone"])
     .order("created_at", { ascending: false })
     .limit(4);
 
   const specimens =
-    lots?.map((lot) => ({
-      id: lot.id,
-      slug: lot.slug,
-      title: lot.name,
-      image: lot.images?.[0] || "/hero-banner.png",
-      price: lot.starting_bid,
-      category: (lot.categories as { name: string; slug: string; type: string } | null)?.name || "",
-      categoryType: (lot.categories as { name: string; slug: string; type: string } | null)?.type || "",
-      status: lot.status,
+    products?.map((product) => ({
+      id: product.id,
+      slug: product.slug,
+      title: product.name,
+      image: product.images?.[0] || "/hero-banner.png",
+      price: product.starting_bid,
+      category: (product.categories as unknown as { name: string; slug: string; type: string } | null)?.name || "",
+      categoryType: (product.categories as unknown as { name: string; slug: string; type: string } | null)?.type || "",
     })) || [];
 
   return (
-    <section className="bg-secondary/30 py-12 sm:py-24">
+    <section className="bg-secondary/30 py-12 sm:py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Hand-Selected for Excellence
-          </p>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Featured Lots
+        <div className="flex items-center gap-4 mb-8">
+          <div className="h-px flex-1 bg-red-400" />
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground whitespace-nowrap">
+            Featured Products
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base text-muted-foreground">
-            Each specimen is hand-selected for its exceptional quality, rarity, and
-            provenance. Certified by GIA, G&uuml;belin, and SSEF.
-          </p>
+          <div className="h-px flex-1 bg-red-400" />
         </div>
 
         {specimens.length > 0 ? (
-          <div className="mt-8 sm:mt-16 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {specimens.map((specimen) => (
               <Link
                 key={specimen.id}
                 href={`/products/${specimen.slug}`}
                 className="group block"
               >
-                <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-white transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
+                <div className="overflow-hidden rounded-2xl border border-border/50 bg-white transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
                   <div className="relative aspect-[4/3] overflow-hidden bg-secondary/30">
                     <Image
                       src={specimen.image}
@@ -58,14 +53,13 @@ export async function FeaturedSpecimens() {
                       className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
                     />
-                    {/* Category badge */}
                     <div className="absolute top-2 left-2">
                       <span className="inline-flex rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground backdrop-blur-sm">
-                        {specimen.categoryType || "Lot"}
+                        {specimen.categoryType}
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-1 flex-col p-3 sm:p-4">
+                  <div className="p-3 sm:p-4">
                     {specimen.category && (
                       <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                         {specimen.category}
@@ -74,8 +68,7 @@ export async function FeaturedSpecimens() {
                     <h3 className="mt-1 text-xs sm:text-sm font-bold text-foreground leading-snug line-clamp-2">
                       {specimen.title}
                     </h3>
-                    <div className="mt-auto pt-2 border-t border-border/50">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Starting from</p>
+                    <div className="mt-2 pt-2 border-t border-border/50">
                       <p className="text-sm sm:text-base font-bold text-foreground">
                         ${specimen.price.toLocaleString()}
                       </p>
@@ -86,17 +79,17 @@ export async function FeaturedSpecimens() {
             ))}
           </div>
         ) : (
-          <div className="mt-8 sm:mt-16 rounded-2xl border border-border/50 bg-white py-10 text-center">
+          <div className="rounded-2xl border border-border/50 bg-white py-10 text-center">
             <p className="text-lg text-muted-foreground">
-              Featured lots coming soon
+              Featured products coming soon
             </p>
           </div>
         )}
 
-        <div className="mt-8 sm:mt-12 text-center">
+        <div className="mt-8 text-center">
           <Link
             href="/minerals"
-            className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-3.5 text-sm font-medium text-foreground transition-all hover:bg-white"
+            className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-3.5 text-sm font-medium text-foreground transition-all hover:bg-secondary"
           >
             View Full Collection
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

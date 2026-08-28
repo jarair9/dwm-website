@@ -43,7 +43,7 @@ export default async function MineralsPage({
 
   const categoryIds = categories.map((c) => c.id);
 
-  let query = supabase.from("lots").select("*, categories(name)");
+  let query = supabase.from("lots").select("*, categories(name)").eq("type", "product");
 
   if (categoryFilter) {
     query = query.eq("category_id", categoryFilter);
@@ -83,28 +83,22 @@ export default async function MineralsPage({
       <main className="flex-1">
         <section className="bg-background py-16 pt-24 lg:pt-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="text-center">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Collection
-              </p>
-              <h1 className="font-serif text-4xl font-bold tracking-tight text-foreground">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="h-px flex-1 bg-red-400" />
+              <h1 className="font-serif text-4xl font-bold tracking-tight text-foreground whitespace-nowrap">
                 Minerals
               </h1>
-              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-                Discover rare mineral specimens — each one a natural wonder
-                formed over millions of years.
-              </p>
+              <div className="h-px flex-1 bg-red-400" />
             </div>
 
             {hasNoCategories ? (
               <div className="mt-16 rounded-2xl border border-border/50 bg-secondary/30 py-20 text-center">
-                <p className="text-5xl">🪨</p>
-                <p className="mt-6 text-xl font-medium text-foreground">
+                <p className="text-xl font-medium text-foreground">
                   Mineral categories coming soon
                 </p>
                 <p className="mt-2 max-w-md mx-auto text-muted-foreground">
                   We&apos;re curating our mineral collection. Check back soon or
-                  browse our gemstone auctions.
+                  browse our gemstone products.
                 </p>
                 <Link
                   href="/gemstones"

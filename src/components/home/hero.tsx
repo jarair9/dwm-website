@@ -16,7 +16,7 @@ interface Banner {
 }
 
 interface HeroSettings {
-  hero_headline: string;
+  hero_headline: string | null;
   hero_heading_line2: string | null;
   hero_subheadline: string | null;
   hero_cta_label: string | null;
@@ -32,27 +32,25 @@ interface HeroSettings {
 }
 
 const DEFAULT_SETTINGS: HeroSettings = {
-  hero_headline: "Rare Minerals.",
-  hero_heading_line2: "Exceptional Craft.",
+  hero_headline: null,
+  hero_heading_line2: null,
   hero_subheadline: null,
-  hero_cta_label: "Enter Auction",
-  hero_cta_url: "/auctions",
-  hero_cta2_label: "View Collection",
-  hero_cta2_url: "/minerals",
-  hero_stat1_value: "200+",
-  hero_stat1_label: "Specimens Sold",
-  hero_stat2_value: "50+",
-  hero_stat2_label: "Countries",
-  hero_stat3_value: "$2M+",
-  hero_stat3_label: "Total Volume",
+  hero_cta_label: null,
+  hero_cta_url: null,
+  hero_cta2_label: null,
+  hero_cta2_url: null,
+  hero_stat1_value: null,
+  hero_stat1_label: null,
+  hero_stat2_value: null,
+  hero_stat2_label: null,
+  hero_stat3_value: null,
+  hero_stat3_label: null,
 };
 
 export function Hero() {
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [mobileBanners, setMobileBanners] = useState<Banner[]>([]);
   const [settings, setSettings] = useState<HeroSettings>(DEFAULT_SETTINGS);
   const [current, setCurrent] = useState(0);
-  const [mobileCurrent, setMobileCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,43 +62,28 @@ export function Hero() {
         .eq("page_type", "home")
         .order("sort_order", { ascending: true }),
       supabase
-        .from("banners")
-        .select("id, image, mobile_image, title, description, cta_label, cta_url")
-        .eq("page_type", "home")
-        .not("mobile_image", "is", null)
-        .order("sort_order", { ascending: true }),
-      supabase
         .from("site_settings")
         .select("*")
         .eq("id", 1)
         .single(),
-    ]).then(([desktopRes, mobileRes, settingsRes]) => {
-      const defaultBanner: Banner = {
-        id: "default",
-        image: "/hero-banner.png",
-        mobile_image: null,
-        title: null,
-        description: null,
-        cta_label: "Enter Auction",
-        cta_url: "/auctions",
-      };
-      setBanners([defaultBanner, ...(desktopRes.data || [])]);
-      setMobileBanners(mobileRes.data || []);
+    ]).then(([desktopRes, settingsRes]) => {
+      setBanners(desktopRes.data || []);
       if (settingsRes.data) {
+        const d = settingsRes.data;
         setSettings({
-          hero_headline: settingsRes.data.hero_headline || DEFAULT_SETTINGS.hero_headline,
-          hero_heading_line2: settingsRes.data.hero_heading_line2 || DEFAULT_SETTINGS.hero_heading_line2,
-          hero_subheadline: settingsRes.data.hero_subheadline,
-          hero_cta_label: settingsRes.data.hero_cta_label || DEFAULT_SETTINGS.hero_cta_label,
-          hero_cta_url: settingsRes.data.hero_cta_url || DEFAULT_SETTINGS.hero_cta_url,
-          hero_cta2_label: settingsRes.data.hero_cta2_label,
-          hero_cta2_url: settingsRes.data.hero_cta2_url,
-          hero_stat1_value: settingsRes.data.hero_stat1_value,
-          hero_stat1_label: settingsRes.data.hero_stat1_label,
-          hero_stat2_value: settingsRes.data.hero_stat2_value,
-          hero_stat2_label: settingsRes.data.hero_stat2_label,
-          hero_stat3_value: settingsRes.data.hero_stat3_value,
-          hero_stat3_label: settingsRes.data.hero_stat3_label,
+          hero_headline: d.hero_headline ?? null,
+          hero_heading_line2: d.hero_heading_line2 ?? null,
+          hero_subheadline: d.hero_subheadline ?? null,
+          hero_cta_label: d.hero_cta_label ?? null,
+          hero_cta_url: d.hero_cta_url ?? null,
+          hero_cta2_label: d.hero_cta2_label ?? null,
+          hero_cta2_url: d.hero_cta2_url ?? null,
+          hero_stat1_value: d.hero_stat1_value ?? null,
+          hero_stat1_label: d.hero_stat1_label ?? null,
+          hero_stat2_value: d.hero_stat2_value ?? null,
+          hero_stat2_label: d.hero_stat2_label ?? null,
+          hero_stat3_value: d.hero_stat3_value ?? null,
+          hero_stat3_label: d.hero_stat3_label ?? null,
         });
       }
       setLoading(false);
@@ -116,66 +99,59 @@ export function Hero() {
     return () => clearInterval(timer);
   }, [banners.length]);
 
-  // Mobile auto-scroll
-  useEffect(() => {
-    if (mobileBanners.length <= 1) return;
-    const timer = setInterval(() => {
-      setMobileCurrent((prev) => (prev + 1) % mobileBanners.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [mobileBanners.length]);
-
   if (loading) return <LoadingSkeleton settings={settings} />;
 
-  const banner = banners[current];
-  const hasMobileBanners = mobileBanners.length > 0;
+  const banner = banners[current] || null;
+  const hasBanners = banners.length > 0;
 
   return (
     <>
       {/* Mobile */}
       <section className="relative block sm:hidden w-full bg-white">
-        <div className="relative h-[80vh]">
-          {hasMobileBanners ? (
+        <div className="relative w-full">
+          {hasBanners ? (
             <>
-              {mobileBanners.map((b, i) => (
-                <div
-                  key={b.id}
-                  className="absolute inset-0 transition-opacity duration-1000"
-                  style={{
-                    opacity: i === mobileCurrent ? 1 : 0,
-                    pointerEvents: i === mobileCurrent ? "auto" : "none",
-                  }}
-                >
-                  <Image
-                    src={b.mobile_image!}
-                    alt={b.title || "Banner"}
-                    fill
-                    className="object-cover object-center"
-                    priority={i === 0}
-                    sizes="100vw"
-                  />
-                </div>
-              ))}
-              <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-2">
-                {mobileBanners.map((b, i) => (
-                  <button
+              {banners.map((b, i) => {
+                const imgSrc = b.mobile_image || b.image || "/mobile-view.png";
+                return (
+                  <div
                     key={b.id}
-                    onClick={() => setMobileCurrent(i)}
-                    className={`h-2 rounded-full transition-all ${
-                      i === mobileCurrent ? "w-8 bg-black" : "w-2 bg-black/30"
-                    }`}
-                  />
-                ))}
-              </div>
+                    className="relative w-full transition-opacity duration-1000"
+                    style={{
+                      opacity: i === current ? 1 : 0,
+                      pointerEvents: i === current ? "auto" : "none",
+                      display: i === current ? "block" : "none",
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imgSrc}
+                      alt={b.title || "Banner"}
+                      className="w-full h-auto"
+                    />
+                  </div>
+                );
+              })}
+              {banners.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+                  {banners.map((b, i) => (
+                    <button
+                      key={b.id}
+                      onClick={() => setCurrent(i)}
+                      className={`h-2 rounded-full transition-all ${
+                        i === current ? "w-8 bg-black" : "w-2 bg-black/30"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </>
           ) : (
-            <Image
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
               src="/mobile-view.png"
               alt="Distinct Mineral World"
-              fill
-              className="object-contain"
-              priority
-              sizes="100vw"
+              className="w-full h-auto"
             />
           )}
         </div>
@@ -183,7 +159,7 @@ export function Hero() {
       </section>
 
       {/* Desktop — banner carousel with text */}
-      <section className="relative hidden sm:block h-screen w-full overflow-hidden bg-white">
+      <section className="relative hidden sm:block w-full h-[calc(100vh-64px)] overflow-hidden bg-white">
         {banners.map((b, i) =>
           b.image ? (
             <div
@@ -206,64 +182,23 @@ export function Hero() {
           ) : null
         )}
 
-        <div className="relative z-10 flex h-full flex-col justify-between">
-          <div className="h-16" />
-          <div className="mx-auto flex w-full max-w-7xl flex-1 items-center px-6">
-            <div className="max-w-2xl">
-              {banner.title && (
-                <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-black/70">
-                  {banner.title}
-                </p>
-              )}
-              <h1 className="font-serif text-5xl font-bold leading-[1.1] tracking-tight text-black md:text-6xl lg:text-7xl">
-                {settings.hero_headline}
-                {settings.hero_heading_line2 && (
-                  <>
-                    <br />
-                    <span className="text-black/70">{settings.hero_heading_line2}</span>
-                  </>
-                )}
-              </h1>
-              {(banner.description || settings.hero_subheadline) && (
-                <p className="mt-6 max-w-md text-lg leading-relaxed text-black/70">
-                  {banner.description || settings.hero_subheadline}
-                </p>
-              )}
-              <div className="mt-10 flex items-center gap-4">
-                <Link
-                  href={banner.cta_url || settings.hero_cta_url || "/auctions"}
-                  className="rounded-full bg-black px-8 py-3.5 text-sm font-medium text-white transition-all hover:bg-black/80 hover:shadow-lg"
-                >
-                  {banner.cta_label || settings.hero_cta_label || "Enter Auction"}
-                </Link>
-                {settings.hero_cta2_label && (
-                  <Link
-                    href={settings.hero_cta2_url || "/minerals"}
-                    className="rounded-full border border-black/20 px-8 py-3.5 text-sm font-medium text-black transition-all hover:bg-black/5"
-                  >
-                    {settings.hero_cta2_label}
-                  </Link>
-                )}
-              </div>
-            </div>
+        {banners.length === 0 && (
+          <div className="absolute inset-0 bg-secondary/30" />
+        )}
+
+        {banners.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+            {banners.map((b, i) => (
+              <button
+                key={b.id}
+                onClick={() => setCurrent(i)}
+                className={`h-2 rounded-full transition-all ${
+                  i === current ? "w-8 bg-black" : "w-2 bg-black/30"
+                }`}
+              />
+            ))}
           </div>
-
-          {banners.length > 1 && (
-            <div className="absolute bottom-28 left-1/2 z-20 flex -translate-x-1/2 gap-2">
-              {banners.map((b, i) => (
-                <button
-                  key={b.id}
-                  onClick={() => setCurrent(i)}
-                  className={`h-2 rounded-full transition-all ${
-                    i === current ? "w-8 bg-black" : "w-2 bg-black/30"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-
-          <Stats settings={settings} />
-        </div>
+        )}
       </section>
     </>
   );
@@ -273,61 +208,55 @@ function LoadingSkeleton({ settings }: { settings: HeroSettings }) {
   return (
     <>
       <section className="relative block sm:hidden w-full bg-white">
-        <div className="relative h-[80vh]">
-          <Image
+        <div className="relative w-full">
+          <img
             src="/mobile-view.png"
             alt="Distinct Mineral World"
-            fill
-            className="object-contain"
-            priority
-            sizes="100vw"
+            className="w-full h-auto"
           />
         </div>
         <Stats settings={settings} />
       </section>
-      <section className="relative hidden sm:block h-screen w-full overflow-hidden bg-white">
-        <Image
-          src="/hero-banner.png"
-          alt="Rare blue sapphire gemstone"
-          fill
-          className="object-cover object-center"
-          priority
-          sizes="100vw"
-        />
-        <div className="relative z-10 flex h-full flex-col justify-between">
-          <div className="h-16" />
-          <div className="mx-auto flex w-full max-w-7xl flex-1 items-center px-6">
+      <section className="relative hidden sm:block w-full pt-16 overflow-hidden bg-secondary/30">
+        <div className="relative z-10">
+          <div className="mx-auto flex w-full max-w-7xl px-6 py-8">
             <div className="max-w-2xl">
-              <h1 className="font-serif text-5xl font-bold leading-[1.1] tracking-tight text-black md:text-6xl lg:text-7xl">
-                {settings.hero_headline}
-                {settings.hero_heading_line2 && (
-                  <>
-                    <br />
-                    <span className="text-black/70">{settings.hero_heading_line2}</span>
-                  </>
-                )}
-              </h1>
+              {settings.hero_headline && (
+                <h1 className="font-serif text-5xl font-bold leading-[1.1] tracking-tight text-black md:text-6xl lg:text-7xl">
+                  {settings.hero_headline}
+                  {settings.hero_heading_line2 && (
+                    <>
+                      <br />
+                      <span className="text-black/70">{settings.hero_heading_line2}</span>
+                    </>
+                  )}
+                </h1>
+              )}
               {settings.hero_subheadline && (
                 <p className="mt-6 max-w-md text-lg leading-relaxed text-black/70">
                   {settings.hero_subheadline}
                 </p>
               )}
-              <div className="mt-10 flex items-center gap-4">
-                <Link
-                  href={settings.hero_cta_url || "/auctions"}
-                  className="rounded-full bg-black px-8 py-3.5 text-sm font-medium text-white transition-all hover:bg-black/80 hover:shadow-lg"
-                >
-                  {settings.hero_cta_label || "Enter Auction"}
-                </Link>
-                {settings.hero_cta2_label && (
-                  <Link
-                    href={settings.hero_cta2_url || "/minerals"}
-                    className="rounded-full border border-black/20 px-8 py-3.5 text-sm font-medium text-black transition-all hover:bg-black/5"
-                  >
-                    {settings.hero_cta2_label}
-                  </Link>
-                )}
-              </div>
+              {(settings.hero_cta_label || settings.hero_cta2_label) && (
+                <div className="mt-10 flex items-center gap-4">
+                  {settings.hero_cta_label && (
+                    <Link
+                      href={settings.hero_cta_url || "/auctions"}
+                      className="rounded-full bg-black px-8 py-3.5 text-sm font-medium text-white transition-all hover:bg-black/80 hover:shadow-lg"
+                    >
+                      {settings.hero_cta_label}
+                    </Link>
+                  )}
+                  {settings.hero_cta2_label && (
+                    <Link
+                      href={settings.hero_cta2_url || "/minerals"}
+                      className="rounded-full border border-black/20 px-8 py-3.5 text-sm font-medium text-black transition-all hover:bg-black/5"
+                    >
+                      {settings.hero_cta2_label}
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <Stats settings={settings} />
