@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -11,6 +12,43 @@ import { ContactModal } from "@/components/product/contact-modal";
 
 interface Props {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id: slug } = await params;
+  const supabase = await createClient();
+  const { data: lot } = await supabase
+    .from("lots")
+    .select("name, description, images, starting_bid, current_bid, status, end_time")
+    .eq("slug", slug)
+    .single();
+
+  if (!lot) return { title: "Auction Not Found" };
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://distinctmineralworld.com";
+  const imageUrl = lot.images?.[0];
+  const statusLabel = lot.status === "live" ? "Live Auction" : lot.status === "upcoming" ? "Upcoming Auction" : "Auction";
+
+  return {
+    title: lot.name,
+    description: lot.description?.slice(0, 160) || `${statusLabel}: ${lot.name} at Distinct Mineral World. Starting bid $${lot.starting_bid.toLocaleString()}.`,
+    alternates: {
+      canonical: `${baseUrl}/auctions/${slug}`,
+    },
+    openGraph: {
+      title: lot.name,
+      description: lot.description?.slice(0, 160) || `${statusLabel}: ${lot.name}.`,
+      type: "website",
+      siteName: "Distinct Mineral World",
+      ...(imageUrl && { images: [{ url: imageUrl, width: 1200, height: 630, alt: lot.name }] }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: lot.name,
+      description: lot.description?.slice(0, 160) || `${statusLabel}: ${lot.name}.`,
+      ...(imageUrl && { images: [imageUrl] }),
+    },
+  };
 }
 
 export default async function AuctionDetailPage({ params }: Props) {
@@ -38,14 +76,42 @@ export default async function AuctionDetailPage({ params }: Props) {
   }
 
   const category = lot.categories as { name: string; slug: string } | null;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://distinctmineralworld.com";
+
+  const auctionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: lot.name,
+    description: lot.description || lot.name,
+    image: lot.images?.[0],
+    organizer: { "@type": "Organization", name: "Distinct Mineral World" },
+    offers: {
+      "@type": "Offer",
+      price: lot.current_bid || lot.starting_bid,
+      priceCurrency: "USD",
+      availability: lot.status === "live" ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: baseUrl },
+      { "@type": "ListItem", position: 2, name: "Auctions", item: `${baseUrl}/auctions` },
+      { "@type": "ListItem", position: 3, name: lot.name },
+    ],
+  };
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(auctionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Navbar />
       <BackButton />
       <main className="flex-1 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 pt-24 lg:pt-20">
-          <nav className="mb-8 text-sm text-muted-foreground">
+          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-muted-foreground">
             <span>Home</span>
             <span className="mx-2">/</span>
             <span>Auctions</span>

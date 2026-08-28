@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { ContactForm } from "@/components/contact-form";
 
 export const metadata = {
-  title: "Contact | Distinct Mineral World",
+  title: "Contact",
   description:
     "Have a question about a specimen, need authentication assistance, or want to consign a piece? We're here to help.",
 };

@@ -3,7 +3,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
 export const metadata: Metadata = {
-  title: "About | Distinct Mineral World",
+  title: "About",
   description:
     "Learn about our mission to curate and present museum-quality gemstones and minerals.",
 };

@@ -18,7 +18,7 @@ export async function FeaturedSpecimens() {
       id: product.id,
       slug: product.slug,
       title: product.name,
-      image: product.images?.[0] || "/hero-banner.png",
+      image: product.images?.[0] || "",
       price: product.starting_bid,
       category: (product.categories as unknown as { name: string; slug: string; type: string } | null)?.name || "",
       categoryType: (product.categories as unknown as { name: string; slug: string; type: string } | null)?.type || "",

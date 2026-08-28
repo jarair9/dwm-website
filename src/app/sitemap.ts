@@ -19,20 +19,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const supabase = await createClient();
-    const { data: lots } = await supabase
+
+    const { data: auctionLots } = await supabase
       .from("lots")
       .select("slug, updated_at")
+      .eq("type", "lot")
       .in("status", ["live", "upcoming", "sold"]);
 
-    const lotPages =
-      lots?.map((lot) => ({
+    const auctionPages =
+      auctionLots?.map((lot) => ({
         url: `${baseUrl}/auctions/${lot.slug}`,
         lastModified: new Date(lot.updated_at),
         changeFrequency: "daily" as const,
         priority: 0.8,
       })) || [];
 
-    return [...staticPages, ...lotPages];
+    const { data: productLots } = await supabase
+      .from("lots")
+      .select("slug, updated_at")
+      .eq("type", "product");
+
+    const productPages =
+      productLots?.map((lot) => ({
+        url: `${baseUrl}/products/${lot.slug}`,
+        lastModified: new Date(lot.updated_at),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      })) || [];
+
+    return [...staticPages, ...auctionPages, ...productPages];
   } catch {
     return staticPages;
   }

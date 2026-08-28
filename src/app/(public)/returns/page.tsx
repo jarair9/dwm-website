@@ -4,7 +4,7 @@ import { Footer } from "@/components/layout/footer";
 import { BackButton } from "@/components/layout/back-button";
 
 export const metadata: Metadata = {
-  title: "Return & Refund Policy | Distinct Mineral World",
+  title: "Return & Refund Policy",
   description: "Return and refund policy for Distinct Mineral World auction house.",
 };
 

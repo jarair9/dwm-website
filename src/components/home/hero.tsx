@@ -112,7 +112,7 @@ export function Hero() {
           {hasBanners ? (
             <>
               {banners.map((b, i) => {
-                const imgSrc = b.mobile_image || b.image || "/mobile-view.png";
+                const imgSrc = b.mobile_image || b.image;
                 return (
                   <div
                     key={b.id}
@@ -126,7 +126,7 @@ export function Hero() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imgSrc}
-                      alt={b.title || "Banner"}
+                      alt={b.title || "Distinct Mineral World"}
                       className="w-full h-auto"
                     />
                   </div>
@@ -147,12 +147,7 @@ export function Hero() {
               )}
             </>
           ) : (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src="/mobile-view.png"
-              alt="Distinct Mineral World"
-              className="w-full h-auto"
-            />
+            <div className="w-full h-48 bg-secondary/30" />
           )}
         </div>
         <Stats settings={settings} />
@@ -160,6 +155,9 @@ export function Hero() {
 
       {/* Desktop — banner carousel with text */}
       <section className="relative hidden sm:block w-full h-[calc(100vh-64px)] overflow-hidden bg-white">
+        {/* SEO H1 — visually hidden */}
+        <h1 className="sr-only">Distinct Mineral World — Rare Gemstone Auctions</h1>
+
         {banners.map((b, i) =>
           b.image ? (
             <div
@@ -172,7 +170,7 @@ export function Hero() {
             >
               <Image
                 src={b.image}
-                alt={b.title || "Banner"}
+                alt={b.title || "Distinct Mineral World"}
                 fill
                 className="object-cover object-center"
                 priority={i === 0}
@@ -208,13 +206,7 @@ function LoadingSkeleton({ settings }: { settings: HeroSettings }) {
   return (
     <>
       <section className="relative block sm:hidden w-full bg-white">
-        <div className="relative w-full">
-          <img
-            src="/mobile-view.png"
-            alt="Distinct Mineral World"
-            className="w-full h-auto"
-          />
-        </div>
+        <div className="relative w-full h-48 bg-secondary/30" />
         <Stats settings={settings} />
       </section>
       <section className="relative hidden sm:block w-full pt-16 overflow-hidden bg-secondary/30">

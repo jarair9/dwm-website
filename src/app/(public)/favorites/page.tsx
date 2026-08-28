@@ -130,7 +130,7 @@ export default function FavoritesPage() {
                           id: lot.id,
                           slug: lot.slug,
                           title: lot.name,
-                          image: lot.images?.[0] || "/hero-banner.png",
+                          image: lot.images?.[0] || "",
                           currentBid: lot.current_bid || lot.starting_bid,
                           startingPrice: lot.starting_bid,
                           endTime: lot.end_time,
@@ -155,7 +155,7 @@ export default function FavoritesPage() {
                           id: lot.id,
                           slug: lot.slug,
                           title: lot.name,
-                          image: lot.images?.[0] || "/hero-banner.png",
+                          image: lot.images?.[0] || "",
                           price: lot.starting_bid,
                         }}
                       />

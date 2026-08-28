@@ -45,7 +45,7 @@ export async function AuctionLinks() {
                     <div className="overflow-hidden rounded-2xl border border-border/50 bg-white transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-secondary/30">
                         <Image
-                          src={lot.images?.[0] || "/hero-banner.png"}
+                          src={lot.images?.[0] || ""}
                           alt={lot.name}
                           fill
                           className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
@@ -111,7 +111,7 @@ export async function AuctionLinks() {
                     <div className="overflow-hidden rounded-2xl border border-border/50 bg-white transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-secondary/30">
                         <Image
-                          src={lot.images?.[0] || "/hero-banner.png"}
+                          src={lot.images?.[0] || ""}
                           alt={lot.name}
                           fill
                           className="object-cover object-center transition-transform duration-500 group-hover:scale-105"

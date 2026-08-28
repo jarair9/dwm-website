@@ -6,7 +6,7 @@ import { BidCard } from "@/components/auction/bid-card";
 import { AuctionFilters } from "@/components/auction/auction-filters";
 
 export const metadata: Metadata = {
-  title: "Auctions | Distinct Mineral World",
+  title: "Auctions",
   description:
     "Browse gemstone and mineral auctions. Place your bid on museum-quality specimens.",
 };
@@ -52,7 +52,7 @@ export default async function AuctionsPage({
       id: lot.id,
       slug: lot.slug,
       title: lot.name,
-      image: lot.images?.[0] || "/hero-banner.png",
+      image: lot.images?.[0] || "",
       currentBid: lot.current_bid || lot.starting_bid,
       startingPrice: lot.starting_bid,
       endTime: lot.end_time,

@@ -330,13 +330,6 @@ export function BannerActions({ banner }: BannerActionsProps) {
                 }}
                 label="Upload Mobile Image"
               />
-              <button
-                type="button"
-                onClick={() => setMobileImage("/mobile-view.png")}
-                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-              >
-                Or use default mobile-view.png
-              </button>
             </div>
           </div>
 

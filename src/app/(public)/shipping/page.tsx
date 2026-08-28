@@ -4,7 +4,7 @@ import { Footer } from "@/components/layout/footer";
 import { BackButton } from "@/components/layout/back-button";
 
 export const metadata: Metadata = {
-  title: "Shipping Policy | Distinct Mineral World",
+  title: "Shipping Policy",
   description: "Shipping and delivery information for Distinct Mineral World.",
 };
 

@@ -23,7 +23,7 @@ export function ImageGallery({ images, name, status }: ImageGalleryProps) {
   const [pinchPos, setPinchPos] = useState({ x: 0, y: 0 });
   const [lastTouch, setLastTouch] = useState<{ dist: number; mid: { x: number; y: number } } | null>(null);
 
-  const displayImages = images.length > 0 ? images : ["/hero-banner.png"];
+  const displayImages = images.length > 0 ? images : [];
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!imageRef.current) return;

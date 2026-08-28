@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/footer";
 import { ProductCard } from "@/components/product/product-card";
 
 export const metadata: Metadata = {
-  title: "Minerals | Distinct Mineral World",
+  title: "Minerals",
   description:
     "Explore our curated collection of rare mineral specimens from around the world.",
 };
@@ -17,7 +17,7 @@ export default async function MineralsPage({
   searchParams: Promise<{ category?: string }>;
 }) {
   const params = await searchParams;
-  const categoryFilter = params.category || "";
+  const categorySlug = params.category || "";
 
   const supabase = await createClient();
 
@@ -30,6 +30,12 @@ export default async function MineralsPage({
   const categories = allCategories || [];
   const parentCategories = categories.filter((c) => !c.parent_id);
   const subCategories = categories.filter((c) => c.parent_id);
+
+  // Resolve slug to category ID
+  const selectedCategory = categorySlug
+    ? categories.find((c) => c.slug === categorySlug || c.id === categorySlug)
+    : null;
+  const categoryFilter = selectedCategory?.id || "";
 
   // Track active category + its parent for highlight state
   const activeCategoryIds = new Set<string>();
@@ -58,7 +64,7 @@ export default async function MineralsPage({
       id: lot.id,
       slug: lot.slug,
       title: lot.name,
-      image: lot.images?.[0] || "/hero-banner.png",
+      image: lot.images?.[0] || "",
       price: lot.starting_bid,
       category: (lot.categories as { name: string } | null)?.name || "",
     })) || [];
@@ -135,7 +141,7 @@ export default async function MineralsPage({
                       return (
                         <Link
                           key={category.id}
-                          href={`/minerals?category=${category.id}`}
+                          href={`/minerals?category=${category.slug}`}
                           className={`inline-flex items-center rounded-full border px-6 py-2.5 text-sm font-medium transition-all ${
                             isActive || hasSubSelected
                               ? "border-foreground bg-foreground text-background"
@@ -157,11 +163,13 @@ export default async function MineralsPage({
                         categoryFilter &&
                         subCategories.some((s) => s.id === categoryFilter)
                           ? `/minerals?category=${
-                              subCategories.find(
-                                (s) => s.id === categoryFilter
-                              )?.parent_id || categoryFilter
+                              categories.find(
+                                (c) => c.id === subCategories.find(
+                                  (s) => s.id === categoryFilter
+                                )?.parent_id
+                              )?.slug || categorySlug
                             }`
-                          : `/minerals?category=${categoryFilter}`
+                          : `/minerals?category=${categorySlug}`
                       }
                       className={`inline-flex items-center rounded-full border px-5 py-2 text-xs font-medium transition-all ${
                         categoryFilter &&
@@ -178,7 +186,7 @@ export default async function MineralsPage({
                     {visibleSubcategories.map((sub) => (
                       <Link
                         key={sub.id}
-                        href={`/minerals?category=${sub.id}`}
+                        href={`/minerals?category=${sub.slug}`}
                         className={`inline-flex items-center rounded-full border px-5 py-2 text-xs font-medium transition-all ${
                           categoryFilter === sub.id
                             ? "border-foreground bg-foreground text-background"

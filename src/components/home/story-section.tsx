@@ -5,7 +5,7 @@ export function StorySection() {
     <section className="relative w-full">
       <div className="relative w-full" style={{ aspectRatio: "1231 / 1277" }}>
         <Image
-          src="/story.png"
+          src="/logo.png"
           alt="The eternal journey — from the earth to your story"
           fill
           className="object-contain"

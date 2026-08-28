@@ -28,7 +28,7 @@ export async function LiveAuctions() {
     id: lot.id,
     slug: lot.slug,
     name: lot.name,
-    image: lot.images?.[0] || "/hero-banner.png",
+    image: lot.images?.[0] || "",
     current_bid: lot.current_bid || 0,
     starting_bid: lot.starting_bid,
     end_time: lot.end_time,

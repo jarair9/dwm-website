@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Geist_Mono } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -10,11 +10,6 @@ const inter = Inter({
 
 const playfair = Playfair_Display({
   variable: "--font-serif",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
@@ -49,7 +44,7 @@ export const metadata: Metadata = {
       "A curated digital auction house for rare minerals and gemstones.",
     images: [
       {
-        url: "/hero-banner.png",
+        url: "https://distinctmineralworld.com/og-image.png",
         width: 1200,
         height: 630,
         alt: "Distinct Mineral World — Rare Gemstone Auctions",
@@ -61,7 +56,7 @@ export const metadata: Metadata = {
     title: "Distinct Mineral World — Rare Gemstone Auctions",
     description:
       "A curated digital auction house for rare minerals and gemstones.",
-    images: ["/hero-banner.png"],
+    images: ["https://distinctmineralworld.com/og-image.png"],
   },
   robots: {
     index: true,
@@ -82,7 +77,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${playfair.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${playfair.variable} h-full antialiased`}
     >
       <head>
         <link rel="icon" href="/favicon.png" type="image/png" />

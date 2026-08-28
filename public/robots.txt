@@ -3,11 +3,14 @@ Disallow: /admin/
 Disallow: /api/
 Disallow: /profile/
 Disallow: /favorites/
+Disallow: /login/
+Disallow: /register/
 
 Allow: /
 Allow: /auctions/
 Allow: /minerals/
 Allow: /gemstones/
+Allow: /products/
 Allow: /about
 Allow: /contact
 Allow: /terms

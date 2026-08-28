@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -9,6 +10,43 @@ import { ContactModal } from "@/components/product/contact-modal";
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: product } = await supabase
+    .from("lots")
+    .select("name, description, images, starting_bid, categories(name)")
+    .eq("slug", slug)
+    .single();
+
+  if (!product) return { title: "Product Not Found" };
+
+  const category = (product.categories as unknown as { name: string } | null);
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://distinctmineralworld.com";
+  const imageUrl = product.images?.[0];
+
+  return {
+    title: product.name,
+    description: product.description?.slice(0, 160) || `Buy ${product.name} for $${product.starting_bid.toLocaleString()} at Distinct Mineral World.`,
+    alternates: {
+      canonical: `${baseUrl}/products/${slug}`,
+    },
+    openGraph: {
+      title: product.name,
+      description: product.description?.slice(0, 160) || `Buy ${product.name} for $${product.starting_bid.toLocaleString()}.`,
+      type: "website",
+      siteName: "Distinct Mineral World",
+      ...(imageUrl && { images: [{ url: imageUrl, width: 1200, height: 630, alt: product.name }] }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description: product.description?.slice(0, 160) || `Buy ${product.name} for $${product.starting_bid.toLocaleString()}.`,
+      ...(imageUrl && { images: [imageUrl] }),
+    },
+  };
 }
 
 export default async function ProductDetailPage({ params }: Props) {
@@ -24,14 +62,44 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!product) notFound();
 
   const category = product.categories as { name: string; slug: string } | null;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://distinctmineralworld.com";
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description || product.name,
+    image: product.images?.[0],
+    brand: { "@type": "Organization", name: "Distinct Mineral World" },
+    category: category?.name,
+    offers: {
+      "@type": "Offer",
+      price: product.starting_bid,
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      seller: { "@type": "Organization", name: "Distinct Mineral World" },
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: baseUrl },
+      { "@type": "ListItem", position: 2, name: category?.name || "Products", item: `${baseUrl}/${category?.slug || "products"}` },
+      { "@type": "ListItem", position: 3, name: product.name },
+    ],
+  };
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Navbar />
       <BackButton />
       <main className="flex-1 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 pt-24 lg:pt-20">
-          <nav className="mb-8 text-sm text-muted-foreground">
+          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-muted-foreground">
             <span>Home</span>
             <span className="mx-2">/</span>
             <span>{category?.name || "Products"}</span>

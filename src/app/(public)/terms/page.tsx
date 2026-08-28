@@ -4,7 +4,7 @@ import { Footer } from "@/components/layout/footer";
 import { BackButton } from "@/components/layout/back-button";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Distinct Mineral World",
+  title: "Terms of Service",
   description: "Terms of service for Distinct Mineral World auction house.",
 };
 

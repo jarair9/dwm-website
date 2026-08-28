@@ -43,7 +43,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/auctions?status=ended" className="text-sm text-white/60 transition-colors hover:text-white">
+                <Link href="/auctions?status=closed" className="text-sm text-white/60 transition-colors hover:text-white">
                   Past Auctions
                 </Link>
               </li>
