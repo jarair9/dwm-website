@@ -7,9 +7,8 @@ export async function FeaturedSpecimens() {
 
   const { data: products } = await supabase
     .from("lots")
-    .select("id, slug, name, images, starting_bid, featured, categories(name, slug, type)")
+    .select("id, slug, name, images, starting_bid, categories(name, slug, type)")
     .eq("type", "product")
-    .eq("featured", true)
     .in("categories.type", ["mineral", "gemstone"])
     .order("created_at", { ascending: false })
     .limit(4);
@@ -31,7 +30,7 @@ export async function FeaturedSpecimens() {
         <div className="flex items-center gap-4 mb-8">
           <div className="h-px flex-1 bg-red-400" />
           <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground whitespace-nowrap">
-            Featured Products
+            Fixed Price
           </h2>
           <div className="h-px flex-1 bg-red-400" />
         </div>
@@ -81,7 +80,7 @@ export async function FeaturedSpecimens() {
         ) : (
           <div className="rounded-2xl border border-border/50 bg-white py-10 text-center">
             <p className="text-lg text-muted-foreground">
-              Featured products coming soon
+              Fixed price products coming soon
             </p>
           </div>
         )}
