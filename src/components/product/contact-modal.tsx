@@ -24,7 +24,7 @@ export function ContactModal({ productName, productPrice }: ContactModalProps) {
         onClick={() => setOpen(true)}
         className="w-full rounded-full bg-foreground py-3.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
       >
-        Contact to Purchase
+        Buy Now
       </button>
 
       {open && (
@@ -64,7 +64,7 @@ export function ContactModal({ productName, productPrice }: ContactModalProps) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">WhatsApp</p>
-                  <p className="text-xs text-muted-foreground">Chat with us directly</p>
+                  <p className="text-xs text-muted-foreground">+92 310 9962623</p>
                 </div>
               </a>
 
@@ -79,7 +79,7 @@ export function ContactModal({ productName, productPrice }: ContactModalProps) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">Email</p>
-                  <p className="text-xs text-muted-foreground">Send us an inquiry</p>
+                  <p className="text-xs text-muted-foreground">rofaqalam007@gmail.com</p>
                 </div>
               </a>
 

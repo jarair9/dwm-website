@@ -57,7 +57,7 @@ export async function LiveAuctions() {
                   className="group block"
                 >
                   <div className="overflow-hidden rounded-2xl border border-border/50 bg-white transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
-                    <div className="relative aspect-[4/3] overflow-hidden bg-secondary/30">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-secondary/30">
                       <Image
                         src={auction.image}
                         alt={auction.name}

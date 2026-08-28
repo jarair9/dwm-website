@@ -80,14 +80,6 @@ export default async function ProductDetailPage({ params }: Props) {
                 </p>
               </div>
 
-              {/* Contact Button */}
-              <div className="mt-6">
-                <ContactModal
-                  productName={product.name}
-                  productPrice={product.starting_bid}
-                />
-              </div>
-
               {/* Product Details */}
               <div className="mt-8 space-y-4 rounded-2xl border border-border/50 p-6">
                 <h3 className="font-serif text-lg font-semibold text-foreground">
@@ -104,11 +96,31 @@ export default async function ProductDetailPage({ params }: Props) {
                     <span className="text-sm text-muted-foreground">Availability</span>
                     <span className="text-sm font-medium text-foreground">In Stock</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between border-b border-border/50 pb-3">
                     <span className="text-sm text-muted-foreground">Certified</span>
                     <span className="text-sm font-medium text-foreground">Yes</span>
                   </div>
+                  <div className="flex justify-between border-b border-border/50 pb-3">
+                    <span className="text-sm text-muted-foreground">Authenticity</span>
+                    <span className="text-sm font-medium text-foreground">GIA Verified</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border/50 pb-3">
+                    <span className="text-sm text-muted-foreground">Shipping</span>
+                    <span className="text-sm font-medium text-foreground">Insured &amp; Tracked</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Returns</span>
+                    <span className="text-sm font-medium text-foreground">14-Day Guarantee</span>
+                  </div>
                 </div>
+              </div>
+
+              {/* Contact Button */}
+              <div className="mt-6">
+                <ContactModal
+                  productName={product.name}
+                  productPrice={product.starting_bid}
+                />
               </div>
             </div>
           </div>

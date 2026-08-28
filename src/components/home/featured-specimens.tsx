@@ -44,7 +44,7 @@ export async function FeaturedSpecimens() {
                 className="group block"
               >
                 <div className="overflow-hidden rounded-2xl border border-border/50 bg-white transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-secondary/30">
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-secondary/30">
                     <Image
                       src={specimen.image}
                       alt={specimen.title}
@@ -52,11 +52,6 @@ export async function FeaturedSpecimens() {
                       className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
                     />
-                    <div className="absolute top-2 left-2">
-                      <span className="inline-flex rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground backdrop-blur-sm">
-                        {specimen.categoryType}
-                      </span>
-                    </div>
                   </div>
                   <div className="p-3 sm:p-4">
                     {specimen.category && (
@@ -68,6 +63,7 @@ export async function FeaturedSpecimens() {
                       {specimen.title}
                     </h3>
                     <div className="mt-2 pt-2 border-t border-border/50">
+                      <p className="text-[10px] text-muted-foreground">Buy Now</p>
                       <p className="text-sm sm:text-base font-bold text-foreground">
                         ${specimen.price.toLocaleString()}
                       </p>
