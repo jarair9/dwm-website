@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -41,11 +41,35 @@ interface Lot {
   images: string[];
   featured: boolean;
   video_url: string | null;
+  current_bid: number | null;
 }
 
 interface LotFormProps {
   lot?: Lot;
   categories: Category[];
+}
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  draft: ["upcoming", "live", "withdrawn"],
+  upcoming: ["live", "draft", "withdrawn"],
+  live: ["closed", "sold", "not_sold", "withdrawn"],
+  closed: ["live", "upcoming", "sold", "not_sold", "withdrawn"],
+  sold: ["closed"],
+  not_sold: ["live", "upcoming", "closed", "withdrawn"],
+  withdrawn: ["draft", "upcoming"],
+};
+
+function toLocalDatetime(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function addHours(localDatetime: string, hours: number): string {
+  const d = new Date(localDatetime);
+  d.setHours(d.getHours() + hours);
+  return toLocalDatetime(d.toISOString());
 }
 
 export function LotForm({ lot, categories }: LotFormProps) {
@@ -60,12 +84,8 @@ export function LotForm({ lot, categories }: LotFormProps) {
   const [description, setDescription] = useState(lot?.description || "");
   const [startingBid, setStartingBid] = useState(lot?.starting_bid || 100);
   const [bidIncrement, setBidIncrement] = useState(lot?.bid_increment || 10);
-  const [startTime, setStartTime] = useState(
-    lot?.start_time ? new Date(lot.start_time).toISOString().slice(0, 16) : ""
-  );
-  const [endTime, setEndTime] = useState(
-    lot?.end_time ? new Date(lot.end_time).toISOString().slice(0, 16) : ""
-  );
+  const [startTime, setStartTime] = useState(toLocalDatetime(lot?.start_time));
+  const [endTime, setEndTime] = useState(toLocalDatetime(lot?.end_time));
   const [status, setStatus] = useState(lot?.status || "draft");
   const [categoryId, setCategoryId] = useState(lot?.category_id || "");
   const [images, setImages] = useState(lot?.images?.join("\n") || "");
@@ -74,6 +94,35 @@ export function LotForm({ lot, categories }: LotFormProps) {
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+
+  const now = useMemo(() => new Date(), []);
+  const originalStatus = lot?.status || "draft";
+  const isStatusChanged = status !== originalStatus;
+  const allowedTransitions = VALID_TRANSITIONS[originalStatus] || [];
+  const isTransitionValid = !isStatusChanged || allowedTransitions.includes(status);
+
+  const imageCount = images.split("\n").filter((u) => u.trim()).length;
+
+  const timeWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    if (status === "live") {
+      if (endTime && new Date(endTime) <= now) {
+        warnings.push("End time is in the past — auction will close immediately if set to Live.");
+      }
+      if (startTime && new Date(startTime) > now) {
+        warnings.push("Start time is in the future — auction won't be visible until then.");
+      }
+    }
+    if (status === "upcoming") {
+      if (startTime && new Date(startTime) <= now) {
+        warnings.push("Start time is in the past — lot will appear as 'upcoming' but may confuse bidders.");
+      }
+      if (endTime && new Date(endTime) <= now) {
+        warnings.push("End time is in the past.");
+      }
+    }
+    return warnings;
+  }, [status, startTime, endTime, now]);
 
   const generateSlug = (text: string) => {
     return text
@@ -86,6 +135,21 @@ export function LotForm({ lot, categories }: LotFormProps) {
     setName(value);
     if (!isEditing) {
       setSlug(generateSlug(value));
+    }
+  };
+
+  const handleStatusChange = (newStatus: string) => {
+    if (!VALID_TRANSITIONS[originalStatus]?.includes(newStatus)) {
+      toast.error(`Cannot change from "${originalStatus}" to "${newStatus}"`);
+      return;
+    }
+
+    setStatus(newStatus);
+
+    if (newStatus === "live" && endTime && new Date(endTime) <= now) {
+      const suggested = addHours(toLocalDatetime(now.toISOString()), 72);
+      setEndTime(suggested);
+      toast.info("End time was in the past — auto-set to 72 hours from now. Adjust as needed.");
     }
   };
 
@@ -159,6 +223,53 @@ export function LotForm({ lot, categories }: LotFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isTransitionValid) {
+      toast.error(`Invalid status transition from "${originalStatus}" to "${status}"`);
+      setLoading(false);
+      return;
+    }
+
+    if (startTime && endTime && new Date(endTime) <= new Date(startTime)) {
+      toast.error("End time must be after start time");
+      setLoading(false);
+      return;
+    }
+
+    if (status === "live" && endTime && new Date(endTime) <= now) {
+      toast.error("Cannot set status to Live with an end time in the past. Update the end time first.");
+      setLoading(false);
+      return;
+    }
+
+    if (status === "upcoming" && startTime && new Date(startTime) <= now) {
+      toast.warning("Start time is in the past — lot will immediately become 'live' on next auto-close check. Consider setting start time to the future.");
+    }
+
+    if (status === "live" && imageCount === 0) {
+      toast.error("A live auction must have at least one image");
+      setLoading(false);
+      return;
+    }
+
+    if (startingBid < 1) {
+      toast.error("Starting bid must be at least $1");
+      setLoading(false);
+      return;
+    }
+
+    if (bidIncrement < 1) {
+      toast.error("Bid increment must be at least $1");
+      setLoading(false);
+      return;
+    }
+
+    if (bidIncrement >= startingBid) {
+      toast.error("Bid increment must be less than starting bid");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     const imageUrls = images
@@ -166,14 +277,16 @@ export function LotForm({ lot, categories }: LotFormProps) {
       .map((url) => url.trim())
       .filter((url) => url.length > 0);
 
-    const lotData = {
+    const isReopening = isEditing && ["closed", "sold", "not_sold", "withdrawn"].includes(originalStatus) && ["live", "upcoming"].includes(status);
+
+    const lotData: Record<string, unknown> = {
       name: name.trim(),
       slug: slug.trim(),
       description: description.trim() || null,
       starting_bid: startingBid,
       bid_increment: bidIncrement,
-      start_time: new Date(startTime).toISOString(),
-      end_time: new Date(endTime).toISOString(),
+      start_time: startTime ? new Date(startTime).toISOString() : null,
+      end_time: endTime ? new Date(endTime).toISOString() : null,
       status,
       type: "lot",
       category_id: categoryId || null,
@@ -181,6 +294,10 @@ export function LotForm({ lot, categories }: LotFormProps) {
       featured,
       video_url: videoUrl || null,
     };
+
+    if (isReopening) {
+      lotData.current_bid = null;
+    }
 
     let error;
     if (isEditing) {
@@ -195,7 +312,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
     }
 
     if (error) {
-      toast.error(`Failed to ${isEditing ? "update" : "create"} lot`);
+      toast.error(`Failed to ${isEditing ? "update" : "create"} lot: ${error.message}`);
     } else {
       toast.success(`Lot ${isEditing ? "updated" : "created"} successfully`);
       router.push("/admin/lots");
@@ -264,9 +381,8 @@ export function LotForm({ lot, categories }: LotFormProps) {
             </Select>
           </div>
 
-          {/* Images */}
           <div className="space-y-2">
-            <Label>Images</Label>
+            <Label>Images {status === "live" && <span className="text-red-500">*</span>}</Label>
             <div className="flex gap-2">
               <input
                 ref={imageInputRef}
@@ -299,7 +415,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              JPEG, PNG, WebP, AVIF — max 10MB each
+              JPEG, PNG, WebP, AVIF — max 10MB each. {imageCount > 0 && <span className="font-medium">{imageCount} image(s) added</span>}
             </p>
             <Textarea
               value={images}
@@ -351,6 +467,9 @@ export function LotForm({ lot, categories }: LotFormProps) {
                 max={10000000}
                 required
               />
+              {startingBid < 1 && (
+                <p className="text-xs text-red-500">Must be at least $1</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="bidIncrement">Bid Increment ($)</Label>
@@ -359,10 +478,13 @@ export function LotForm({ lot, categories }: LotFormProps) {
                 type="number"
                 value={bidIncrement}
                 onChange={(e) => setBidIncrement(Number(e.target.value))}
-                min={5}
+                min={1}
                 max={1000000}
                 required
               />
+              {bidIncrement >= startingBid && startingBid > 0 && (
+                <p className="text-xs text-red-500">Must be less than starting bid</p>
+              )}
             </div>
           </div>
 
@@ -375,6 +497,9 @@ export function LotForm({ lot, categories }: LotFormProps) {
               onChange={(e) => setStartTime(e.target.value)}
               required
             />
+            {startTime && new Date(startTime) <= now && status === "upcoming" && (
+              <p className="text-xs text-amber-600">Start time is in the past — lot will appear as &quot;upcoming&quot; but may confuse bidders</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -386,27 +511,61 @@ export function LotForm({ lot, categories }: LotFormProps) {
               onChange={(e) => setEndTime(e.target.value)}
               required
             />
+            {endTime && new Date(endTime) <= now && status === "live" && (
+              <p className="text-xs text-red-500">End time is in the past — must update before setting status to Live</p>
+            )}
           </div>
+
+          {timeWarnings.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+              {timeWarnings.map((w, i) => (
+                <p key={i} className="text-xs text-amber-700">{w}</p>
+              ))}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(v) => v && setStatus(v)}>
+            <Select value={status} onValueChange={(v) => v && handleStatusChange(v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="upcoming">Upcoming</SelectItem>
-                <SelectItem value="live">Live</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-                <SelectItem value="sold">Sold</SelectItem>
-                <SelectItem value="not_sold">Not Sold</SelectItem>
-                <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                <SelectItem value="draft" disabled={!VALID_TRANSITIONS[originalStatus]?.includes("draft")}>
+                  Draft
+                </SelectItem>
+                <SelectItem value="upcoming" disabled={!VALID_TRANSITIONS[originalStatus]?.includes("upcoming")}>
+                  Upcoming
+                </SelectItem>
+                <SelectItem value="live" disabled={!VALID_TRANSITIONS[originalStatus]?.includes("live")}>
+                  Live
+                </SelectItem>
+                <SelectItem value="closed" disabled={!VALID_TRANSITIONS[originalStatus]?.includes("closed")}>
+                  Closed
+                </SelectItem>
+                <SelectItem value="sold" disabled={!VALID_TRANSITIONS[originalStatus]?.includes("sold")}>
+                  Sold
+                </SelectItem>
+                <SelectItem value="not_sold" disabled={!VALID_TRANSITIONS[originalStatus]?.includes("not_sold")}>
+                  Not Sold
+                </SelectItem>
+                <SelectItem value="withdrawn" disabled={!VALID_TRANSITIONS[originalStatus]?.includes("withdrawn")}>
+                  Withdrawn
+                </SelectItem>
               </SelectContent>
             </Select>
+            {!isTransitionValid && (
+              <p className="text-xs text-red-500">
+                Cannot transition from &quot;{originalStatus}&quot; to &quot;{status}&quot;
+              </p>
+            )}
+            {isEditing && isStatusChanged && (
+              <p className="text-xs text-muted-foreground">
+                Current: {originalStatus} → New: {status}
+              </p>
+            )}
           </div>
 
-          {/* Video */}
           <div className="space-y-2">
             <Label>Video</Label>
             <div className="flex gap-2">
@@ -485,9 +644,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
                 return;
               setLoading(true);
               try {
-                // Clean up storage
                 await deleteStorageFiles([...(lot.images ?? []), lot.video_url]);
-                // Clean up lot_media
                 await supabase.from("lot_media").delete().eq("lot_id", lot.id);
 
                 const { error } = await supabase
@@ -513,7 +670,7 @@ export function LotForm({ lot, categories }: LotFormProps) {
           </button>
         )}
         <div className="flex gap-4">
-          <Button type="submit" className="rounded-full" disabled={loading}>
+          <Button type="submit" className="rounded-full" disabled={loading || !isTransitionValid}>
             {loading
               ? "Saving..."
               : isEditing

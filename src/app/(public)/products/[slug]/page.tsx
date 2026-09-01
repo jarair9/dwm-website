@@ -162,7 +162,7 @@ export default async function ProductDetailPage({ params }: Props) {
                   )}
                   <div className="flex justify-between border-b border-border/50 pb-3">
                     <span className="text-sm text-muted-foreground">Availability</span>
-                    <span className="text-sm font-medium text-foreground">In Stock</span>
+                    <span className="text-sm font-medium text-foreground">{product.status === "live" ? "In Stock" : product.status === "sold" ? "Sold" : "Available"}</span>
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-3">
                     <span className="text-sm text-muted-foreground">Certified</span>
@@ -170,7 +170,7 @@ export default async function ProductDetailPage({ params }: Props) {
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-3">
                     <span className="text-sm text-muted-foreground">Authenticity</span>
-                    <span className="text-sm font-medium text-foreground">GIA Verified</span>
+                    <span className="text-sm font-medium text-foreground">Verified</span>
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-3">
                     <span className="text-sm text-muted-foreground">Shipping</span>

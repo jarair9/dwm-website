@@ -130,6 +130,7 @@ export function BidPanel({ lot }: BidPanelProps) {
 
       if (result.success) {
         toast.success(`Bid of $${bidAmount.toLocaleString()} placed!`);
+        window.location.reload();
       } else {
         toast.error(result.message || "Bid failed");
       }
@@ -171,9 +172,11 @@ export function BidPanel({ lot }: BidPanelProps) {
         <p className="mt-1 font-serif text-4xl font-bold text-foreground">
           ${currentBid.toLocaleString()}
         </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The product has a reserve price.
-        </p>
+        {lot.currentBid && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Bid increment: ${lot.bidIncrement.toLocaleString()}
+          </p>
+        )}
       </div>
 
       {/* Countdown */}

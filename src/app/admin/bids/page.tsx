@@ -12,7 +12,7 @@ export default async function AdminBidsPage() {
 
   const { data: lots } = await supabase
     .from("lots")
-    .select("id, name, status, current_bid, starting_bid")
+    .select("id, name, status, current_bid, starting_bid, end_time")
     .in("status", ["live", "upcoming"])
     .order("created_at", { ascending: false });
 
@@ -145,7 +145,7 @@ async function LotStatusRow({
         ${(lot.current_bid || lot.starting_bid)?.toLocaleString()}
       </td>
       <td className="px-4 py-3">
-        <LotStatusForm lotId={lot.id} currentStatus={lot.status} />
+        <LotStatusForm lotId={lot.id} currentStatus={lot.status} endTime={(lot as Record<string, unknown>).end_time as string | undefined} />
       </td>
     </tr>
   );

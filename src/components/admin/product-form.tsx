@@ -192,6 +192,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
               }}
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
               required
+              maxLength={200}
             />
           </div>
           <div>
@@ -202,6 +203,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
               onChange={(e) => setSlug(e.target.value)}
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
               required
+              maxLength={200}
             />
           </div>
           <div>
@@ -276,6 +278,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
               value={price}
               onChange={(e) => setPrice(Number(e.target.value))}
               min={1}
+              max={10000000}
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
               required
             />

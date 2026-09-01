@@ -54,6 +54,34 @@ export async function POST(request: NextRequest) {
 
     const { auction_id, amount } = parsed.data;
 
+    // Verify lot exists and is open for bidding
+    const { data: lot, error: lotError } = await supabase
+      .from("lots")
+      .select("status")
+      .eq("id", auction_id)
+      .single();
+
+    if (lotError || !lot) {
+      return NextResponse.json(
+        { success: false, message: "Lot not found" },
+        { status: 404 }
+      );
+    }
+
+    if (lot.status === "closed" || lot.status === "sold" || lot.status === "not_sold" || lot.status === "withdrawn") {
+      return NextResponse.json(
+        { success: false, message: "This auction has ended" },
+        { status: 400 }
+      );
+    }
+
+    if (lot.status === "upcoming") {
+      return NextResponse.json(
+        { success: false, message: "This auction has not started yet" },
+        { status: 400 }
+      );
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("id, full_name, email, phone")
@@ -72,9 +100,11 @@ export async function POST(request: NextRequest) {
     }
 
     const { data, error } = await supabase.rpc("place_bid", {
-      p_auction_id: auction_id,
-      p_bidder_id: profile.id,
+      p_lot_id: auction_id,
       p_amount: amount,
+      p_user_id: profile.id,
+      p_bidder_name: profile.full_name || profile.email,
+      p_user_key: profile.id,
     });
 
     if (error) {
@@ -85,7 +115,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!data?.success) {
+    if (!data?.ok) {
       return NextResponse.json(
         {
           success: false,
@@ -98,7 +128,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Bid placed successfully",
-      new_end_time: data.new_end_time,
+      current_bid: data.current_bid,
     });
   } catch {
     return NextResponse.json(

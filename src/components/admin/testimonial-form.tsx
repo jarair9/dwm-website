@@ -43,6 +43,18 @@ export function TestimonialForm({ testimonial, onDone }: TestimonialFormProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      if (imageInputRef.current) imageInputRef.current.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      if (imageInputRef.current) imageInputRef.current.value = "";
+      return;
+    }
+
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `testimonials/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;

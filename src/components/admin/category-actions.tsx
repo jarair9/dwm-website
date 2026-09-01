@@ -179,11 +179,13 @@ export function CategoryActions({
         }
       }
 
-      // Unassign lots from this category
+      // Unassign lots from this category and all subcategories
+      const subIds = subs?.map((s: { id: string }) => s.id) ?? [];
+      const allCategoryIds = [category.id, ...subIds];
       await supabase
         .from("lots")
         .update({ category_id: null })
-        .eq("category_id", category.id);
+        .in("category_id", allCategoryIds);
 
       // Delete parent category
       const { error } = await supabase

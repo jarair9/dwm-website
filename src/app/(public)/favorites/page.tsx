@@ -13,6 +13,7 @@ interface FavoriteLot {
   id: string;
   slug: string;
   name: string;
+  type: string;
   images: string[];
   starting_bid: number;
   current_bid: number | null;
@@ -61,7 +62,8 @@ export default function FavoritesPage() {
       const { data: lots } = await supabase
         .from("lots")
         .select("*")
-        .in("id", lotIds);
+        .in("id", lotIds)
+        .order("created_at", { ascending: false });
 
       setFavorites(lots || []);
       setLoading(false);
@@ -70,8 +72,8 @@ export default function FavoritesPage() {
     getFavorites();
   }, [supabase, router]);
 
-  const liveLots = favorites.filter((l) => l.status === "live" || l.status === "upcoming");
-  const productLots = favorites.filter((l) => !["live", "upcoming"].includes(l.status));
+  const liveLots = favorites.filter((l) => l.type === "lot");
+  const productLots = favorites.filter((l) => l.type === "product");
 
   return (
     <>

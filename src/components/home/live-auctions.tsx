@@ -6,6 +6,9 @@ import { CountdownTimer } from "@/components/auction/countdown-timer";
 export async function LiveAuctions() {
   const supabase = await createClient();
 
+  // Close expired auctions first, then fetch live ones
+  await supabase.rpc("close_all_expired_auctions");
+
   const { data: lots } = await supabase
     .from("lots")
     .select("id, slug, name, images, current_bid, starting_bid, end_time, bid_increment, status")
@@ -14,17 +17,7 @@ export async function LiveAuctions() {
     .order("end_time", { ascending: true })
     .limit(8);
 
-  await supabase.rpc("close_all_expired_auctions");
-
-  const { data: refreshedLots } = await supabase
-    .from("lots")
-    .select("id, slug, name, images, current_bid, starting_bid, end_time, bid_increment, status")
-    .eq("status", "live")
-    .eq("type", "lot")
-    .order("end_time", { ascending: true })
-    .limit(8);
-
-  const auctions = (refreshedLots || lots || []).map((lot) => ({
+  const auctions = (lots || []).map((lot) => ({
     id: lot.id,
     slug: lot.slug,
     name: lot.name,
