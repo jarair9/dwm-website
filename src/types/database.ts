@@ -721,7 +721,7 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: {};
+    Views: unknown;
     Functions: {
       is_admin: { Args: never; Returns: boolean };
       place_bid: {
@@ -758,7 +758,7 @@ export type Database = {
       shipment_status: "pending" | "shipped" | "delivered" | "returned";
       vertical_type: "minerals" | "gemstones";
     };
-    CompositeTypes: {};
+    CompositeTypes: unknown;
   };
 };
 

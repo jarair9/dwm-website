@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { CountdownTimer } from "./countdown-timer";
@@ -33,12 +34,15 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: bool
 
 export function BidCard({ auction, showUrgency, compact }: BidCardProps) {
   const hasBids = auction.currentBid > auction.startingPrice;
-  const timeLeft = Math.max(0, Math.floor((new Date(auction.endTime).getTime() - Date.now()) / 1000));
+  // Snapshot of time remaining taken once at mount; the live countdown
+  // rendering is handled by <CountdownTimer />.
+  const [timeLeft] = useState(() =>
+    Math.max(0, Math.floor((new Date(auction.endTime).getTime() - Date.now()) / 1000))
+  );
   const isEndingSoon = timeLeft > 0 && timeLeft < 3600;
   const isLive = auction.status === "live";
   const isNotSold = auction.status === "not_sold";
   const isClosed = auction.status === "closed" || auction.status === "sold" || auction.status === "awaiting_payment";
-  const isUrgent = timeLeft > 0 && timeLeft < 300;
 
   const statusStyle = STATUS_CONFIG[auction.status || "live"] || STATUS_CONFIG.live;
 

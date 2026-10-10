@@ -45,9 +45,6 @@ export function CountdownTimer({ endTime, onEnd, variant = "compact", size = "sm
   const minutes = Math.floor((timeLeft % 3600) / 60);
   const seconds = timeLeft % 60;
 
-  const isUrgent = timeLeft < 300;
-  const isCritical = timeLeft < 60;
-
   if (variant === "detailed") {
     return (
       <div className="flex items-center gap-3">

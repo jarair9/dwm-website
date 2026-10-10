@@ -101,7 +101,6 @@ export function Hero() {
 
   if (loading) return <LoadingSkeleton settings={settings} />;
 
-  const banner = banners[current] || null;
   const hasBanners = banners.length > 0;
 
   return (

@@ -25,6 +25,39 @@ export function ImageGallery({ images, name, status }: ImageGalleryProps) {
 
   const displayImages = images?.length > 0 ? images : [];
 
+  const lastTapRef = useRef(0);
+
+  const closeLightbox = useCallback(() => {
+    setLightbox(false);
+    setPinchScale(1);
+    setPinchPos({ x: 0, y: 0 });
+    document.body.style.overflow = "";
+  }, []);
+
+  const prevImage = useCallback(() => {
+    setLightboxIndex((i) => (i > 0 ? i - 1 : displayImages.length - 1));
+    setPinchScale(1);
+    setPinchPos({ x: 0, y: 0 });
+  }, [displayImages.length]);
+
+  const nextImage = useCallback(() => {
+    setLightboxIndex((i) => (i < displayImages.length - 1 ? i + 1 : 0));
+    setPinchScale(1);
+    setPinchPos({ x: 0, y: 0 });
+  }, [displayImages.length]);
+
+  // Keyboard nav for lightbox
+  useEffect(() => {
+    if (!lightbox) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") prevImage();
+      if (e.key === "ArrowRight") nextImage();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [lightbox, closeLightbox, prevImage, nextImage]);
+
   if (displayImages.length === 0) {
     return (
       <div className="flex aspect-square items-center justify-center rounded-2xl bg-secondary/30">
@@ -50,25 +83,6 @@ export function ImageGallery({ images, name, status }: ImageGalleryProps) {
     setPinchPos({ x: 0, y: 0 });
     document.body.style.overflow = "hidden";
   };
-
-  const closeLightbox = useCallback(() => {
-    setLightbox(false);
-    setPinchScale(1);
-    setPinchPos({ x: 0, y: 0 });
-    document.body.style.overflow = "";
-  }, []);
-
-  const prevImage = useCallback(() => {
-    setLightboxIndex((i) => (i > 0 ? i - 1 : displayImages.length - 1));
-    setPinchScale(1);
-    setPinchPos({ x: 0, y: 0 });
-  }, [displayImages.length]);
-
-  const nextImage = useCallback(() => {
-    setLightboxIndex((i) => (i < displayImages.length - 1 ? i + 1 : 0));
-    setPinchScale(1);
-    setPinchPos({ x: 0, y: 0 });
-  }, [displayImages.length]);
 
   // Pinch-to-zoom handlers
   const getTouchDist = (touches: TouchList) => {
@@ -108,7 +122,6 @@ export function ImageGallery({ images, name, status }: ImageGalleryProps) {
   };
 
   // Double-tap to zoom
-  const lastTapRef = useRef(0);
   const handleDoubleTap = () => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
@@ -121,18 +134,6 @@ export function ImageGallery({ images, name, status }: ImageGalleryProps) {
     }
     lastTapRef.current = now;
   };
-
-  // Keyboard nav for lightbox
-  useEffect(() => {
-    if (!lightbox) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowLeft") prevImage();
-      if (e.key === "ArrowRight") nextImage();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [lightbox, closeLightbox, prevImage, nextImage]);
 
   return (
     <div>

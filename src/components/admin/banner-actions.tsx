@@ -42,6 +42,86 @@ interface BannerActionsProps {
   banner?: Banner;
 }
 
+function ImageUpload({
+  value,
+  onChange,
+  uploading: isUploading,
+  fileInputRef: ref,
+  onUpload,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  uploading: boolean;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  label: string;
+}) {
+  return (
+    <div className="flex gap-4">
+      {value ? (
+        <div className="relative h-32 w-48 overflow-hidden rounded-lg border border-border">
+          <Image
+            src={value}
+            alt="Banner preview"
+            fill
+            className="object-cover"
+            sizes="192px"
+          />
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white hover:bg-black/80"
+          >
+            x
+          </button>
+        </div>
+      ) : (
+        <div className="flex h-32 w-48 items-center justify-center rounded-lg border-2 border-dashed border-border bg-secondary/30">
+          <p className="text-xs text-muted-foreground">No image</p>
+        </div>
+      )}
+      <div className="flex flex-col gap-2">
+        <input
+          ref={ref}
+          type="file"
+          accept="image/*"
+          onChange={onUpload}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => ref?.current?.click()}
+          disabled={isUploading}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+            />
+          </svg>
+          {isUploading ? "Uploading..." : label}
+        </button>
+        <p className="text-[10px] text-muted-foreground">Or paste URL below</p>
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="https://example.com/banner.jpg"
+          className="text-xs"
+        />
+      </div>
+    </div>
+  );
+}
+
 export function BannerActions({ banner }: BannerActionsProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -192,84 +272,6 @@ export function BannerActions({ banner }: BannerActionsProps) {
       setDeleting(false);
     }
   };
-
-  const ImageUpload = ({
-    value,
-    onChange,
-    uploading: isUploading,
-    fileInputRef: ref,
-    onUpload,
-    label,
-  }: {
-    value: string;
-    onChange: (v: string) => void;
-    uploading: boolean;
-    fileInputRef: React.RefObject<HTMLInputElement | null>;
-    onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    label: string;
-  }) => (
-    <div className="flex gap-4">
-      {value ? (
-        <div className="relative h-32 w-48 overflow-hidden rounded-lg border border-border">
-          <Image
-            src={value}
-            alt="Banner preview"
-            fill
-            className="object-cover"
-            sizes="192px"
-          />
-          <button
-            type="button"
-            onClick={() => onChange("")}
-            className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white hover:bg-black/80"
-          >
-            x
-          </button>
-        </div>
-      ) : (
-        <div className="flex h-32 w-48 items-center justify-center rounded-lg border-2 border-dashed border-border bg-secondary/30">
-          <p className="text-xs text-muted-foreground">No image</p>
-        </div>
-      )}
-      <div className="flex flex-col gap-2">
-        <input
-          ref={ref}
-          type="file"
-          accept="image/*"
-          onChange={onUpload}
-          className="hidden"
-        />
-        <button
-          type="button"
-          onClick={() => ref?.current?.click()}
-          disabled={isUploading}
-          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-50"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-            />
-          </svg>
-          {isUploading ? "Uploading..." : label}
-        </button>
-        <p className="text-[10px] text-muted-foreground">Or paste URL below</p>
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="https://example.com/banner.jpg"
-          className="text-xs"
-        />
-      </div>
-    </div>
-  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

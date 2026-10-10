@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,27 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [lockedUntil, setLockedUntil] = useState(0);
+  const [now, setNow] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
 
-  const isLocked = Date.now() < lockedUntil;
+  const isLocked = lockedUntil > 0 && now < lockedUntil;
+
+  // Tick while locked so the countdown label and lock state stay fresh
+  useEffect(() => {
+    if (lockedUntil === 0) return;
+
+    const timer = setInterval(() => {
+      const timestamp = Date.now();
+      setNow(timestamp);
+      if (timestamp >= lockedUntil) {
+        setLockedUntil(0);
+      }
+    }, 250);
+
+    return () => clearInterval(timer);
+  }, [lockedUntil]);
 
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
@@ -46,6 +62,7 @@ export function LoginForm() {
         setAttempts(newAttempts);
 
         if (newAttempts >= MAX_ATTEMPTS) {
+          setNow(Date.now());
           setLockedUntil(Date.now() + LOCKOUT_MS);
           setAttempts(0);
           toast.error("Too many failed attempts. Locked for 1 minute.");
@@ -98,7 +115,7 @@ export function LoginForm() {
         disabled={loading || isLocked}
       >
         {isLocked
-          ? `Locked — wait ${Math.ceil((lockedUntil - Date.now()) / 1000)}s`
+          ? `Locked — wait ${Math.max(1, Math.ceil((lockedUntil - now) / 1000))}s`
           : loading
             ? "Signing in..."
             : "Sign In"}

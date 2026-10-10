@@ -14,6 +14,16 @@ interface Testimonial {
   created_at: string;
 }
 
+async function loadTestimonials(
+  supabase: ReturnType<typeof createClient>
+): Promise<Testimonial[]> {
+  const { data } = await supabase
+    .from("testimonials")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return (data as Testimonial[]) || [];
+}
+
 export default function AdminTestimonialsPage() {
   const supabase = createClient();
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -23,17 +33,22 @@ export default function AdminTestimonialsPage() {
 
   const fetchTestimonials = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("testimonials")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setTestimonials(data || []);
+    setTestimonials(await loadTestimonials(supabase));
     setLoading(false);
   };
 
+  // Initial load — setState happens in the promise callback, not synchronously
   useEffect(() => {
-    fetchTestimonials();
-  }, []);
+    let cancelled = false;
+    loadTestimonials(supabase).then((data) => {
+      if (cancelled) return;
+      setTestimonials(data);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
 
   const handleDone = () => {
     setShowForm(false);
@@ -65,7 +80,11 @@ export default function AdminTestimonialsPage() {
           <h2 className="mb-4 text-lg font-semibold text-foreground">
             {editing ? "Edit Testimonial" : "New Testimonial"}
           </h2>
-          <TestimonialForm testimonial={editing || undefined} onDone={handleDone} />
+          <TestimonialForm
+            key={editing?.id ?? "new"}
+            testimonial={editing || undefined}
+            onDone={handleDone}
+          />
         </div>
       )}
 

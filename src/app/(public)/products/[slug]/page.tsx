@@ -23,7 +23,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!product) return { title: "Product Not Found" };
 
-  const category = (product.categories as unknown as { name: string } | null);
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://distinctmineralworld.com";
   const imageUrl = product.images?.[0];
 

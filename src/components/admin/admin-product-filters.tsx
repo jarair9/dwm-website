@@ -37,7 +37,6 @@ const STATUS_OPTIONS = [
 
 export function AdminProductFilters({
   products,
-  categories,
 }: {
   products: Lot[];
   categories: Category[];

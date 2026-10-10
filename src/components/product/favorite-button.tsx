@@ -12,15 +12,12 @@ interface FavoriteButtonProps {
 export function FavoriteButton({ lotId, size = "sm" }: FavoriteButtonProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkFavorite = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      setUserId(user.id);
 
       const { data: profile } = await supabase
         .from("profiles")

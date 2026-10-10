@@ -112,10 +112,9 @@ const navItems = [
   },
 ];
 
-export function AdminSidebar() {
+function NavContent({ onNavigate }: { onNavigate: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -123,7 +122,7 @@ export function AdminSidebar() {
     router.push("/");
   };
 
-  const NavContent = () => (
+  return (
     <>
       <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
         {navItems.map((item) => {
@@ -136,7 +135,7 @@ export function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => setMobileOpen(false)}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
@@ -164,6 +163,10 @@ export function AdminSidebar() {
       </div>
     </>
   );
+}
+
+export function AdminSidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
@@ -202,7 +205,7 @@ export function AdminSidebar() {
             </svg>
           </button>
         </div>
-        <NavContent />
+        <NavContent onNavigate={() => setMobileOpen(false)} />
       </aside>
 
       {/* Desktop sidebar */}
@@ -212,7 +215,7 @@ export function AdminSidebar() {
             DMW Admin
           </Link>
         </div>
-        <NavContent />
+        <NavContent onNavigate={() => setMobileOpen(false)} />
       </aside>
     </>
   );

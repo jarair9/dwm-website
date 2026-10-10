@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { AdminLotFilters } from "@/components/admin/admin-lot-filters";
